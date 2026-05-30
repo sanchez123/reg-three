@@ -1,11 +1,26 @@
-<?php include 'header.php'; ?>
-
 <?php
-// Handle delete request
+// FIX: All PHP logic (including delete redirect) MUST come before any HTML output.
+// The original file did include 'header.php' on line 1, which output full HTML,
+// then tried to call header("Location: ...") inside the delete block — causing
+// "headers already sent" warning. Now mirrors the correct pattern in candidates-list.php.
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once '../config.php';
+
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+$admin_id = $_SESSION['admin_id'];
+
+// Handle delete request — BEFORE any HTML output
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $member_id = intval($_GET['id']);
 
-    // Verify member exists
+    // Verify member exists and get photo path
     $verify = $conn->prepare("SELECT photo_path FROM members WHERE id = ?");
     if ($verify) {
         $verify->bind_param("i", $member_id);
@@ -15,17 +30,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         if ($result->num_rows > 0) {
             $member = $result->fetch_assoc();
 
-            // Delete photo if exists
+            // Delete photo file if it exists
             if ($member['photo_path'] && file_exists('../' . $member['photo_path'])) {
                 unlink('../' . $member['photo_path']);
             }
 
-            // Delete member
+            // Delete member record
             $delete_query = $conn->prepare("DELETE FROM members WHERE id = ?");
             if ($delete_query) {
                 $delete_query->bind_param("i", $member_id);
                 if ($delete_query->execute()) {
                     log_audit($admin_id, 'DELETE', 'members', $member_id, ['action' => 'Member deleted']);
+                    $_SESSION['flash_success'] = 'Member deleted successfully!';
                 }
                 $delete_query->close();
             }
@@ -33,6 +49,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         $verify->close();
     }
 
+    // Safe to redirect — no HTML has been output yet
     header("Location: members-list.php");
     exit();
 }
@@ -44,10 +61,10 @@ $per_page = intval($_GET['per_page'] ?? 10);
 
 // Filtering
 $country_filter = isset($_GET['country']) && $_GET['country'] !== 'all' ? sanitize_input($_GET['country']) : '';
-$status_filter = isset($_GET['status']) && $_GET['status'] !== 'all' ? sanitize_input($_GET['status']) : '';
-$search = isset($_GET['search']) ? sanitize_input($_GET['search']) : '';
+$status_filter  = isset($_GET['status'])  && $_GET['status']  !== 'all' ? sanitize_input($_GET['status'])  : '';
+$search         = isset($_GET['search'])  ? sanitize_input($_GET['search']) : '';
 
-// Build query
+// Build WHERE clause
 $where_conditions = ["1=1"];
 
 if (!empty($country_filter)) {
@@ -66,10 +83,9 @@ if (!empty($search)) {
 $where_clause = implode(" AND ", $where_conditions);
 
 // Get total count
-$count_query = "SELECT COUNT(*) as total FROM members WHERE $where_clause";
-$count_result = $conn->query($count_query);
-$total = $count_result->fetch_assoc()['total'];
-$total_pages = ceil($total / $per_page);
+$count_result = $conn->query("SELECT COUNT(*) as total FROM members WHERE $where_clause");
+$total        = $count_result->fetch_assoc()['total'];
+$total_pages  = ceil($total / $per_page);
 
 if ($page > $total_pages && $total_pages > 0) {
     $page = $total_pages;
@@ -78,20 +94,21 @@ if ($page > $total_pages && $total_pages > 0) {
 $offset = ($page - 1) * $per_page;
 
 // Get members
-$query = "SELECT * FROM members WHERE $where_clause ORDER BY registration_date DESC LIMIT $offset, $per_page";
-$result = $conn->query($query);
+$result  = $conn->query("SELECT * FROM members WHERE $where_clause ORDER BY registration_date DESC LIMIT $offset, $per_page");
 $members = [];
 while ($row = $result->fetch_assoc()) {
     $members[] = $row;
 }
 
-// Get unique countries for filter
-$countries_query = "SELECT DISTINCT country FROM members ORDER BY country";
-$countries_result = $conn->query($countries_query);
-$countries = [];
+// Get unique countries for filter dropdown
+$countries_result = $conn->query("SELECT DISTINCT country FROM members ORDER BY country");
+$countries        = [];
 while ($row = $countries_result->fetch_assoc()) {
     $countries[] = $row['country'];
 }
+
+// Now safe to output HTML
+include 'header.php';
 ?>
 
                 <style>
@@ -175,20 +192,18 @@ while ($row = $countries_result->fetch_assoc()) {
                         display: flex;
                         gap: 10px;
                         align-items: flex-end;
+                        margin-top: 15px;
                     }
 
-                    .filter-buttons button {
+                    .apply-filter {
                         padding: 10px 20px;
+                        background: #2563eb;
+                        color: white;
                         border: none;
                         border-radius: 8px;
                         cursor: pointer;
                         font-weight: 600;
                         transition: 0.3s ease;
-                    }
-
-                    .apply-filter {
-                        background: #2563eb;
-                        color: white;
                         flex: 1;
                     }
 
@@ -197,9 +212,16 @@ while ($row = $countries_result->fetch_assoc()) {
                     }
 
                     .reset-filter {
+                        padding: 10px 20px;
                         background: #f3f4f6;
                         color: #333;
                         border: 2px solid #ddd;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
                     }
 
                     .reset-filter:hover {
@@ -373,11 +395,6 @@ while ($row = $countries_result->fetch_assoc()) {
                         border-color: #2563eb;
                     }
 
-                    .page-link.disabled {
-                        color: #cbd5e1;
-                        cursor: not-allowed;
-                    }
-
                     @media (max-width: 768px) {
                         .list-header {
                             flex-direction: column;
@@ -426,8 +443,8 @@ while ($row = $countries_result->fetch_assoc()) {
                             <select name="country">
                                 <option value="all">All Countries</option>
                                 <?php foreach ($countries as $country): ?>
-                                    <option value="<?php echo $country; ?>" <?php echo $country_filter === $country ? 'selected' : ''; ?>>
-                                        <?php echo $country; ?>
+                                    <option value="<?php echo htmlspecialchars($country); ?>" <?php echo $country_filter === $country ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($country); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -438,7 +455,7 @@ while ($row = $countries_result->fetch_assoc()) {
                             <select name="status">
                                 <option value="all">All Status</option>
                                 <option value="approved" <?php echo $status_filter === 'approved' ? 'selected' : ''; ?>>Approved</option>
-                                <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                <option value="pending"  <?php echo $status_filter === 'pending'  ? 'selected' : ''; ?>>Pending</option>
                                 <option value="rejected" <?php echo $status_filter === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
                             </select>
                         </div>
@@ -453,7 +470,7 @@ while ($row = $countries_result->fetch_assoc()) {
                         </div>
                     </div>
 
-                    <div class="filter-buttons" style="margin-top: 15px;">
+                    <div class="filter-buttons">
                         <button type="submit" class="apply-filter">
                             <i class="fas fa-search"></i> Apply Filters
                         </button>
@@ -505,8 +522,8 @@ while ($row = $countries_result->fetch_assoc()) {
                                             <td><?php echo htmlspecialchars($member['country']); ?></td>
                                             <td><?php echo htmlspecialchars($member['education']); ?></td>
                                             <td>
-                                                <span class="status-badge status-<?php echo $member['status']; ?>">
-                                                    <?php echo ucfirst($member['status']); ?>
+                                                <span class="status-badge status-<?php echo htmlspecialchars($member['status']); ?>">
+                                                    <?php echo ucfirst(htmlspecialchars($member['status'])); ?>
                                                 </span>
                                             </td>
                                             <td><?php echo date('M d, Y', strtotime($member['registration_date'])); ?></td>
@@ -515,7 +532,9 @@ while ($row = $countries_result->fetch_assoc()) {
                                                     <a href="edit-member.php?id=<?php echo $member['id']; ?>" class="action-btn edit-btn">
                                                         <i class="fas fa-edit"></i>Edit
                                                     </a>
-                                                    <a href="?action=delete&id=<?php echo $member['id']; ?>" class="action-btn delete-btn" onclick="return confirm('Are you sure you want to delete this member?');">
+                                                    <a href="?action=delete&id=<?php echo $member['id']; ?>"
+                                                       class="action-btn delete-btn"
+                                                       onclick="return confirm('Are you sure you want to delete this member?');">
                                                         <i class="fas fa-trash"></i>Delete
                                                     </a>
                                                 </div>
@@ -527,7 +546,12 @@ while ($row = $countries_result->fetch_assoc()) {
                         </div>
 
                         <!-- PAGINATION -->
-                        <?php if ($total_pages > 1): ?>
+                        <?php if ($total_pages > 1):
+                            $qs = (!empty($search)         ? '&search='   . urlencode($search)         : '')
+                                . (!empty($country_filter) ? '&country='  . urlencode($country_filter) : '')
+                                . (!empty($status_filter)  ? '&status='   . urlencode($status_filter)  : '')
+                                . ('&per_page=' . $per_page);
+                        ?>
                             <div class="pagination-container">
                                 <span class="pagination-info">
                                     Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $per_page, $total); ?> of <?php echo $total; ?> members
@@ -535,23 +559,20 @@ while ($row = $countries_result->fetch_assoc()) {
 
                                 <div class="pagination-links">
                                     <?php if ($page > 1): ?>
-                                        <a href="?page=1<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($country_filter) ? '&country=' . urlencode($country_filter) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="page-link">« First</a>
-                                        <a href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($country_filter) ? '&country=' . urlencode($country_filter) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="page-link">‹ Prev</a>
+                                        <a href="?page=1<?php echo $qs; ?>" class="page-link">« First</a>
+                                        <a href="?page=<?php echo $page - 1; ?><?php echo $qs; ?>" class="page-link">‹ Prev</a>
                                     <?php endif; ?>
 
-                                    <?php
-                                    $start = max(1, $page - 2);
-                                    $end = min($total_pages, $page + 2);
-                                    for ($i = $start; $i <= $end; $i++):
-                                    ?>
-                                        <a href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($country_filter) ? '&country=' . urlencode($country_filter) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="page-link <?php echo $i === $page ? 'active' : ''; ?>">
+                                    <?php for ($i = max(1, $page - 2); $i <= min($total_pages, $page + 2); $i++): ?>
+                                        <a href="?page=<?php echo $i; ?><?php echo $qs; ?>"
+                                           class="page-link <?php echo $i === $page ? 'active' : ''; ?>">
                                             <?php echo $i; ?>
                                         </a>
                                     <?php endfor; ?>
 
                                     <?php if ($page < $total_pages): ?>
-                                        <a href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($country_filter) ? '&country=' . urlencode($country_filter) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="page-link">Next ›</a>
-                                        <a href="?page=<?php echo $total_pages; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($country_filter) ? '&country=' . urlencode($country_filter) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="page-link">Last »</a>
+                                        <a href="?page=<?php echo $page + 1; ?><?php echo $qs; ?>" class="page-link">Next ›</a>
+                                        <a href="?page=<?php echo $total_pages; ?><?php echo $qs; ?>" class="page-link">Last »</a>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -560,4 +581,3 @@ while ($row = $countries_result->fetch_assoc()) {
                 </div>
 
 <?php include 'footer.php'; ?>
-

@@ -140,9 +140,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare($query);
 
             if ($stmt) {
-                $status = 'approved'; // Admin approval defaults to approved
+                // FIX: corrected bind_param type string
+                // 15 strings: first_name, mothers_name, gender, date_of_birth, place_of_birth,
+                //              government_id, education, occupation, country, state, district,
+                //              email, phone, photo_path, security_code
+                // then: added_by (int = i), status (string = s)
+                // Correct string: "sssssssssssssss" + "i" + "s" = "sssssssssssssssis"
+                $status = 'approved'; // Admin-added members default to approved
                 $stmt->bind_param(
-                    "ssssssssssssssssi",
+                    "sssssssssssssssis",
                     $form_data['first_name'],
                     $form_data['mothers_name'],
                     $form_data['gender'],
@@ -179,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Regenerate security code if on page
+    // Regenerate security code if empty
     if (empty($_SESSION['security_code'])) {
         $_SESSION['security_code'] = rand(10000, 99999);
     }
@@ -527,4 +533,3 @@ if (!isset($_SESSION['security_code'])) {
                 </div>
 
 <?php include 'footer.php'; ?>
-

@@ -1,5 +1,5 @@
 <?php
-// All PHP logic BEFORE header.php to allow redirects
+// All PHP logic BEFORE header.php to allow redirects on auth failure only
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -19,6 +19,7 @@ if (!isset($_GET['id'])) {
 
 $candidate_id = intval($_GET['id']);
 $errors       = [];
+$success      = '';
 
 // Fetch candidate
 $query = $conn->prepare("SELECT * FROM candidates WHERE id = ?");
@@ -60,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'status'         => sanitize_input($_POST['status']         ?? ''),
     ];
 
-    // Validation — mirrors edit-member.php exactly
+    // Validation
     if (empty($form_data['first_name']))   $errors[] = 'First name is required';
     if (empty($form_data['mothers_name'])) $errors[] = "Mother's name is required";
 
@@ -144,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Save if no errors — redirect happens here, before any HTML output
+    // FIX: Stay on page — show inline success/error instead of redirecting
     if (empty($errors)) {
         $update_query = $conn->prepare(
             "UPDATE candidates SET first_name=?, mothers_name=?, gender=?, date_of_birth=?,
@@ -175,9 +176,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($update_query->execute()) {
                 log_audit($admin_id, 'UPDATE', 'candidates', $candidate_id, ['action' => 'Candidate updated', 'phone' => $form_data['phone']]);
-                $_SESSION['flash_success'] = 'Candidate updated successfully!';
-                header('Location: candidates-list.php');
-                exit();
+                // Stay on page with success message (same behaviour as edit-member.php)
+                $success = 'Candidate updated successfully!';
+                // Refresh candidate data to reflect saved values
+                $candidate = $form_data;
+                $candidate['photo_path'] = $photo_path;
             } else {
                 $errors[] = 'Error updating candidate. Please try again.';
             }
@@ -188,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Only include header AFTER all possible redirects are done
+// Include header AFTER all auth redirects are done
 include 'header.php';
 ?>
 
@@ -239,6 +242,12 @@ include 'header.php';
 <div class="form-container-admin">
     <h1 class="page-title"><i class="fas fa-edit" style="margin-right: 10px;"></i>Edit Candidate</h1>
     <p class="page-subtitle">Update candidate information</p>
+
+    <?php if (!empty($success)): ?>
+        <div class="alert alert-success show">
+            <i class="fas fa-check-circle" style="margin-right: 10px;"></i><?php echo htmlspecialchars($success); ?>
+        </div>
+    <?php endif; ?>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-error show">
