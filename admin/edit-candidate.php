@@ -145,7 +145,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // FIX: Stay on page — show inline success/error instead of redirecting
     if (empty($errors)) {
         $update_query = $conn->prepare(
             "UPDATE candidates SET first_name=?, mothers_name=?, gender=?, date_of_birth=?,
@@ -176,11 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($update_query->execute()) {
                 log_audit($admin_id, 'UPDATE', 'candidates', $candidate_id, ['action' => 'Candidate updated', 'phone' => $form_data['phone']]);
-                // Stay on page with success message (same behaviour as edit-member.php)
                 $success = 'Candidate updated successfully!';
-                // Refresh candidate data to reflect saved values
-                $candidate = $form_data;
-                $candidate['photo_path'] = $photo_path;
+                $form_data['photo_path'] = $photo_path; // FIX: keep photo_path in form_data after POST
             } else {
                 $errors[] = 'Error updating candidate. Please try again.';
             }
@@ -188,6 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errors[] = 'Database error: ' . $conn->error;
         }
+    } else {
+        // Validation failed — preserve the existing photo_path so it still shows
+        $form_data['photo_path'] = $candidate['photo_path'];
     }
 }
 

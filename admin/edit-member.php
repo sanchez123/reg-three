@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($update_query->execute()) {
                 log_audit($admin_id, 'UPDATE', 'members', $member_id, ['action' => 'Member updated', 'phone' => $form_data['phone']]);
                 $success = 'Member updated successfully!';
+                $form_data['photo_path'] = $photo_path; // FIX: keep photo_path in form_data after POST
             } else {
                 $errors[] = 'Error updating member. Please try again.';
             }
@@ -193,6 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errors[] = 'Database error: ' . $conn->error;
         }
+    } else {
+        // Validation failed — preserve the existing photo_path so it still shows
+        $form_data['photo_path'] = $member['photo_path'];
     }
 }
 ?>
@@ -494,9 +498,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="form-group">
                                 <label>Photo (Optional)</label>
-                                 <input type="file" name="photo" accept="image/*">
+                                <input type="file" name="photo" accept="image/*">
                                 <?php
-                                $photo_url = $form_data['photo_path'] ? ('../' . ltrim($form_data['photo_path'], '/')) : 'assets/default-avatar.png';
+                                $photo_url = !empty($form_data['photo_path'])
+                                    ? ('../' . ltrim($form_data['photo_path'], '/'))
+                                    : '../assets/default-avatar.png';
                                 ?>
                                 <div class="current-photo">
                                     <small style="color: #666;">Current photo:</small>
@@ -533,4 +539,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
 <?php include 'footer.php'; ?>
-
