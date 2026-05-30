@@ -1,0 +1,447 @@
+<style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, sans-serif;
+    }
+
+/* =========================
+CLASSIC REGISTRATION FORM
+========================= */
+
+.form-container{
+    background:#f5f5f5;
+    border:1px solid #dcdcdc;
+    padding:20px 30px;
+    border-radius:4px;
+    box-shadow:none;
+}
+
+.classic-form{
+    width:100%;
+}
+
+.form-row{
+    display:flex;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid #ddd;
+}
+
+.form-row label{
+    width:260px;
+    font-size:15px;
+    font-weight:bold;
+    color:#333;
+}
+
+.form-row label span{
+    color:red;
+}
+
+.form-row input{
+    width:360px;
+    height:38px;
+    border:1px solid #cfcfcf;
+    border-radius:4px;
+    padding:0 10px;
+    background:#fff;
+    font-size:14px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.08);
+}
+.form-row select{
+    width: 368px;
+    height: 38px;
+    border: 1px solid #cfcfcf;
+    border-radius: 4px;
+    padding: 0px 10px;
+    margin-left: -7px;
+    background:#fff;
+    font-size:14px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.form-row input:focus,
+.form-row select:focus{
+    outline:none;
+    border:1px solid #0453ad;
+}
+
+.form-row input[type="file"]{
+    padding:6px;
+    height:auto;
+}
+
+.security-wrapper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.security-number{
+    background:#fff;
+    border:1px solid #ccc;
+    padding:8px 15px;
+    font-size:28px;
+    font-weight:bold;
+    border-radius:4px;
+    color:#111;
+    letter-spacing:2px;
+}
+
+.security-wrapper input{
+    width:90px;
+}
+
+.button-row{
+    margin-top:25px;
+    display:flex;
+    gap:12px;
+    justify-content:center;
+}
+
+.dark-btn{
+    background:linear-gradient(#666, #222);
+    color:#fff;
+    border:none;
+    padding:12px 25px;
+    border-radius:4px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dark-btn:hover{
+    background:linear-gradient(#555, #111);
+}
+
+@media(max-width:768px){
+
+    .form-row{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+    .form-row label{
+        width:100%;
+    }
+
+    .form-row input,
+    .form-row select{
+        width:100%;
+    }
+
+    .security-wrapper{
+        width:100%;
+        flex-wrap:wrap;
+    }
+
+    .button-row{
+        flex-direction:column;
+    }
+
+    .dark-btn{
+        width:100%;
+    }
+
+}
+
+    .registration-wrapper{
+        max-width:1100px;
+        margin:auto;
+        display:grid;
+        grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+        gap:30px;
+    }
+
+    .registration-card{
+        background:#ffffff;
+        padding:40px 30px;
+        border-radius:18px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.12);
+        transition:0.3s ease;
+        position:relative;
+        overflow:hidden;
+    }
+
+    .registration-card:hover{
+        transform:translateY(-5px);
+        box-shadow:0 15px 35px rgba(0,0,0,0.18);
+    }
+
+    .registration-card h2{
+        font-size:20px !important;
+        color:#083a9c;
+        margin-bottom:18px;
+        font-weight:700;
+    }
+    .registration-card h4{
+        font-size:15px !important;
+        color:#083a9c;
+        margin-bottom:18px;
+        font-weight:700;
+    }
+
+    .registration-card p{
+        font-size:16px;
+        line-height:1.7;
+        color:#555;
+        margin-bottom:30px;
+    }
+
+    .register-btn{
+        display:inline-block;
+        background:#d73322;
+        color:#fff;
+        text-decoration:none;
+          padding: 8px 18px;
+    border-radius: 5px;
+        font-size:13px;
+        font-weight:600;
+        transition:0.3s ease;
+        box-shadow:0 6px 18px rgba(8,58,156,0.25);
+    }
+
+    .register-btn:hover{
+        background:#b51808;
+    }
+
+    .view-btn{
+        display:inline-block;
+        background:#083a9c;
+        color:#fff;
+        text-decoration:none;
+            padding: 8px 18px;
+    border-radius: 5px;
+        font-size:13px;
+        font-weight:600;
+        transition:0.3s ease;
+        box-shadow:0 6px 18px rgba(8,58,156,0.25);
+    }
+
+    .view-btn:hover{
+        background:#0f4ecd;
+    }
+
+    @media(max-width:600px){
+        .registration-card{
+            padding:30px 22px;
+        }
+
+        .registration-card h2{
+            font-size:18px;
+        }
+        .registration-card h4{
+            font-size:14px;
+        }
+    }
+
+
+.table-container{
+      width:95%;
+      background:#fff;
+      border-radius:20px;
+      padding:25px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .table-header{
+      margin-bottom:25px;
+    }
+
+    .table-header h1{
+      font-size:30px;
+      color:#0f172a;
+      margin-bottom:8px;
+    }
+
+    .table-header p{
+      color:#64748b;
+      font-size:15px;
+    }
+
+    /* FILTER AREA */
+
+    .top-controls{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:20px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .filters{
+      display:flex;
+      gap:15px;
+      flex-wrap:wrap;
+    }
+
+    .filter-group{
+      display:flex;
+      flex-direction:column;
+      min-width:220px;
+    }
+
+    .filter-group label{
+      margin-bottom:8px;
+      font-size:14px;
+      width: 100%;
+      font-weight:bold;
+      color:#1e293b;
+    }
+
+    .filter-group select{
+      height:50px;
+      border:none;
+      border-radius:12px;
+      padding:0 15px;
+      background:#f8fafc;
+      outline:none;
+      font-size:14px;
+
+      box-shadow:
+      inset 3px 3px 8px rgba(0,0,0,0.08),
+      inset -3px -3px 8px rgba(255,255,255,0.9);
+    }
+
+    .filter-group select:focus{
+      border:2px solid #2563eb;
+      background:#fff;
+    }
+
+    /* TABLE */
+
+    .table-responsive{
+      overflow-x:auto;
+      border-radius:14px;
+    }
+
+    table{
+      width:100%;
+      min-width:1400px;
+      border-collapse:collapse;
+    }
+
+    thead{
+      background:linear-gradient(to right, #2563eb, #1d4ed8);
+      color:#fff;
+    }
+
+    thead th{
+      padding:16px;
+      text-align:left;
+      white-space:nowrap;
+      font-size:14px;
+    }
+
+    tbody tr{
+      border-bottom:1px solid #e2e8f0;
+      transition:0.3s ease;
+    }
+
+    tbody tr:hover{
+      background:#f8fafc;
+    }
+
+    tbody td{
+      padding:16px;
+      font-size:14px;
+      color:#334155;
+      white-space:nowrap;
+    }
+
+    /* STATUS */
+
+    .status{
+      padding:7px 14px;
+      border-radius:30px;
+      font-size:12px;
+      font-weight:bold;
+      display:inline-block;
+    }
+
+    .active{
+      background:#dcfce7;
+      color:#166534;
+    }
+
+    .pending{
+      background:#fef3c7;
+      color:#92400e;
+    }
+
+    .inactive{
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    /* PAGINATION */
+
+    .pagination{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      margin-top:25px;
+      flex-wrap:wrap;
+    }
+
+    .pagination button{
+      border:none;
+      padding:10px 16px;
+      border-radius:10px;
+      background:#2563eb;
+      color:#fff;
+      cursor:pointer;
+      font-weight:bold;
+      transition:0.3s ease;
+    }
+
+    .pagination button:hover{
+      background:#1d4ed8;
+    }
+
+    .pagination button:disabled{
+      background:#94a3b8;
+      cursor:not-allowed;
+    }
+
+    .page-info{
+      font-size:14px;
+      color:#475569;
+      font-weight:bold;
+    }
+
+    @media(max-width:768px){
+
+      .top-controls{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .filters{
+        flex-direction:column;
+      }
+
+      .filter-group{
+        width:100%;
+      }
+
+      .table-header h1{
+        font-size:24px;
+      }
+
+    }
+
+    .view_main {
+    margin: 0px !important;
+    padding: 5px 10px;
+    width: 100% !important;
+    min-height: 1379px !important;
+}
+
+  </style>
