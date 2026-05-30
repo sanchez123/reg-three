@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (isset($_SESSION['security_code']) && (int)$_SESSION['security_code'] !== (int)$form_data['security_code']) {
             $errors[] = 'Security code is incorrect';
         }
-    
+
 
     // If no errors, process the form
     if (empty($errors)) {

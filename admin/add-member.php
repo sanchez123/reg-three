@@ -1,37 +1,41 @@
-<?php include 'header.php'; ?>
-
 <?php
+// All PHP logic BEFORE any HTML output to allow redirects
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once '../config.php';
+
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+$admin_id = $_SESSION['admin_id'];
 $errors = [];
-$success = '';
 $form_data = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect and sanitize input
     $form_data = [
-        'first_name' => sanitize_input($_POST['first_name'] ?? ''),
-        'mothers_name' => sanitize_input($_POST['mothers_name'] ?? ''),
-        'gender' => sanitize_input($_POST['gender'] ?? ''),
-        'date_of_birth' => sanitize_input($_POST['date_of_birth'] ?? ''),
+        'first_name'     => sanitize_input($_POST['first_name']     ?? ''),
+        'mothers_name'   => sanitize_input($_POST['mothers_name']   ?? ''),
+        'gender'         => sanitize_input($_POST['gender']         ?? ''),
+        'date_of_birth'  => sanitize_input($_POST['date_of_birth']  ?? ''),
         'place_of_birth' => sanitize_input($_POST['place_of_birth'] ?? ''),
-        'government_id' => sanitize_input($_POST['government_id'] ?? ''),
-        'education' => sanitize_input($_POST['education'] ?? ''),
-        'occupation' => sanitize_input($_POST['occupation'] ?? ''),
-        'country' => sanitize_input($_POST['country'] ?? ''),
-        'state' => sanitize_input($_POST['state'] ?? ''),
-        'district' => sanitize_input($_POST['district'] ?? ''),
-        'email' => sanitize_input($_POST['email'] ?? ''),
-        'phone' => sanitize_input($_POST['phone'] ?? ''),
-        'security_code' => sanitize_input($_POST['security_code'] ?? '')
+        'government_id'  => sanitize_input($_POST['government_id']  ?? ''),
+        'education'      => sanitize_input($_POST['education']      ?? ''),
+        'occupation'     => sanitize_input($_POST['occupation']     ?? ''),
+        'country'        => sanitize_input($_POST['country']        ?? ''),
+        'state'          => sanitize_input($_POST['state']          ?? ''),
+        'district'       => sanitize_input($_POST['district']       ?? ''),
+        'email'          => sanitize_input($_POST['email']          ?? ''),
+        'phone'          => sanitize_input($_POST['phone']          ?? ''),
+        'security_code'  => sanitize_input($_POST['security_code']  ?? '')
     ];
 
     // Validation
-    if (empty($form_data['first_name'])) {
-        $errors[] = 'First name is required';
-    }
-
-    if (empty($form_data['mothers_name'])) {
-        $errors[] = 'Mother\'s name is required';
-    }
+    if (empty($form_data['first_name']))   $errors[] = 'First name is required';
+    if (empty($form_data['mothers_name'])) $errors[] = "Mother's name is required";
 
     if (empty($form_data['gender']) || !in_array($form_data['gender'], ['Male', 'Female'])) {
         $errors[] = 'Valid gender selection is required';
@@ -40,37 +44,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($form_data['date_of_birth']) || !strtotime($form_data['date_of_birth'])) {
         $errors[] = 'Valid date of birth is required';
     } else {
-        $dob = new DateTime($form_data['date_of_birth']);
+        $dob   = new DateTime($form_data['date_of_birth']);
         $today = new DateTime();
-        $age = $today->diff($dob)->y;
-        if ($age < 18) {
-            $errors[] = 'Member must be at least 18 years old';
-        }
+        $age   = $today->diff($dob)->y;
+        if ($age < 18) $errors[] = 'Member must be at least 18 years old';
     }
 
-    if (empty($form_data['place_of_birth'])) {
-        $errors[] = 'Place of birth is required';
-    }
+    if (empty($form_data['place_of_birth'])) $errors[] = 'Place of birth is required';
 
     if (empty($form_data['education']) || !in_array($form_data['education'], ['Primary School', 'Secondary School', 'Diploma', 'Degree'])) {
         $errors[] = 'Valid education level is required';
     }
 
-    if (empty($form_data['occupation'])) {
-        $errors[] = 'Occupation is required';
-    }
-
-    if (empty($form_data['country'])) {
-        $errors[] = 'Country is required';
-    }
-
-    if (empty($form_data['state'])) {
-        $errors[] = 'State/Region is required';
-    }
-
-    if (empty($form_data['district'])) {
-        $errors[] = 'District is required';
-    }
+    if (empty($form_data['occupation'])) $errors[] = 'Occupation is required';
+    if (empty($form_data['country']))    $errors[] = 'Country is required';
+    if (empty($form_data['state']))      $errors[] = 'State/Region is required';
+    if (empty($form_data['district']))   $errors[] = 'District is required';
 
     if (empty($form_data['email'])) {
         $errors[] = 'Email is required';
@@ -84,69 +73,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid phone number format';
     }
 
-    // Check for duplicate email if provided
+    // Duplicate email check
     if (!empty($form_data['email'])) {
         $email_check = $conn->prepare("SELECT id FROM members WHERE email = ?");
         if ($email_check) {
             $email_check->bind_param("s", $form_data['email']);
             $email_check->execute();
-            if ($email_check->get_result()->num_rows > 0) {
-                $errors[] = 'Email already registered';
-            }
+            if ($email_check->get_result()->num_rows > 0) $errors[] = 'Email already registered';
             $email_check->close();
         }
     }
 
-    // Check for duplicate phone
-    $phone_check = $conn->prepare("SELECT id FROM members WHERE phone = ?");
-    if ($phone_check) {
-        $phone_check->bind_param("s", $form_data['phone']);
-        $phone_check->execute();
-        if ($phone_check->get_result()->num_rows > 0) {
-            $errors[] = 'Phone number already registered';
+    // Duplicate phone check
+    if (!empty($form_data['phone'])) {
+        $phone_check = $conn->prepare("SELECT id FROM members WHERE phone = ?");
+        if ($phone_check) {
+            $phone_check->bind_param("s", $form_data['phone']);
+            $phone_check->execute();
+            if ($phone_check->get_result()->num_rows > 0) $errors[] = 'Phone number already registered';
+            $phone_check->close();
         }
-        $phone_check->close();
     }
 
-    // Validate security code
+    // Security code validation
     if (empty($form_data['security_code'])) {
         $errors[] = 'Security code is required';
     } elseif ($form_data['security_code'] != $_SESSION['security_code']) {
         $errors[] = 'Incorrect security code';
-        // Regenerate code
         $_SESSION['security_code'] = rand(10000, 99999);
     }
 
-    // If no errors, process upload and save
+    // If no errors, save and redirect
     if (empty($errors)) {
         $photo_path = null;
-
-        // Handle file upload
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
             $photo_path = upload_file($_FILES['photo'], '../uploads/members/');
             if (!$photo_path) {
-                $errors[] = 'Failed to upload photo. Please ensure it\'s a valid image file (JPEG, PNG, GIF) under 5MB.';
+                $errors[] = "Failed to upload photo. Please ensure it's a valid image file (JPEG, PNG, GIF) under 5MB.";
             }
         }
 
         if (empty($errors)) {
-            // Insert into database
-            $query = "INSERT INTO members
-                      (first_name, mothers_name, gender, date_of_birth, place_of_birth,
-                       government_id, education, occupation, country, state, district,
-                       email, phone, photo_path, security_code, added_by, status)
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $status = 'approved'; // Admin-added members are always approved
 
-            $stmt = $conn->prepare($query);
+            $stmt = $conn->prepare(
+                "INSERT INTO members
+                 (first_name, mothers_name, gender, date_of_birth, place_of_birth,
+                  government_id, education, occupation, country, state, district,
+                  email, phone, photo_path, security_code, added_by, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
 
             if ($stmt) {
-                // FIX: corrected bind_param type string
-                // 15 strings: first_name, mothers_name, gender, date_of_birth, place_of_birth,
-                //              government_id, education, occupation, country, state, district,
-                //              email, phone, photo_path, security_code
-                // then: added_by (int = i), status (string = s)
-                // Correct string: "sssssssssssssss" + "i" + "s" = "sssssssssssssssis"
-                $status = 'approved'; // Admin-added members default to approved
                 $stmt->bind_param(
                     "sssssssssssssssis",
                     $form_data['first_name'],
@@ -171,10 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute()) {
                     $member_id = $conn->insert_id;
                     log_audit($admin_id, 'CREATE', 'members', $member_id, ['action' => 'Member added', 'phone' => $form_data['phone']]);
-
-                    $success = 'Member added successfully!';
-                    $form_data = []; // Clear form
-                    $_SESSION['security_code'] = rand(10000, 99999); // Generate new code
+                    $_SESSION['flash_success'] = 'Member added successfully!';
+                    $stmt->close();
+                    header("Location: members-list.php");
+                    exit();
                 } else {
                     $errors[] = 'Error saving member. Please try again.';
                 }
@@ -185,8 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Regenerate security code if empty
-    if (empty($_SESSION['security_code'])) {
+    // Regenerate security code on any error
+    if (!isset($_SESSION['security_code'])) {
         $_SESSION['security_code'] = rand(10000, 99999);
     }
 }
@@ -195,6 +173,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (!isset($_SESSION['security_code'])) {
     $_SESSION['security_code'] = rand(10000, 99999);
 }
+
+// Output HTML only after all possible redirects
+include 'header.php';
 ?>
 
                 <style>
@@ -233,14 +214,8 @@ if (!isset($_SESSION['security_code'])) {
                     }
 
                     @keyframes slideIn {
-                        from {
-                            opacity: 0;
-                            transform: translateY(-10px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
+                        from { opacity: 0; transform: translateY(-10px); }
+                        to   { opacity: 1; transform: translateY(0); }
                     }
 
                     .alert-error {
@@ -249,19 +224,8 @@ if (!isset($_SESSION['security_code'])) {
                         border-color: #dc2626;
                     }
 
-                    .alert-success {
-                        background: #dcfce7;
-                        color: #166534;
-                        border-color: #16a34a;
-                    }
-
-                    .alert ul {
-                        margin-left: 20px;
-                    }
-
-                    .alert li {
-                        margin-bottom: 5px;
-                    }
+                    .alert ul { margin-left: 20px; }
+                    .alert li { margin-bottom: 5px; }
 
                     .form-row {
                         display: grid;
@@ -270,14 +234,9 @@ if (!isset($_SESSION['security_code'])) {
                         margin-bottom: 20px;
                     }
 
-                    .form-row.full {
-                        grid-template-columns: 1fr;
-                    }
+                    .form-row.full { grid-template-columns: 1fr; }
 
-                    .form-group {
-                        display: flex;
-                        flex-direction: column;
-                    }
+                    .form-group { display: flex; flex-direction: column; }
 
                     .form-group label {
                         font-weight: 600;
@@ -292,8 +251,7 @@ if (!isset($_SESSION['security_code'])) {
                     }
 
                     .form-group input,
-                    .form-group select,
-                    .form-group textarea {
+                    .form-group select {
                         padding: 12px 15px;
                         border: 2px solid #ddd;
                         border-radius: 8px;
@@ -303,16 +261,10 @@ if (!isset($_SESSION['security_code'])) {
                     }
 
                     .form-group input:focus,
-                    .form-group select:focus,
-                    .form-group textarea:focus {
+                    .form-group select:focus {
                         outline: none;
                         border-color: #2563eb;
                         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-                    }
-
-                    .form-group textarea {
-                        resize: vertical;
-                        min-height: 100px;
                     }
 
                     .security-wrapper {
@@ -335,9 +287,7 @@ if (!isset($_SESSION['security_code'])) {
                         min-width: 120px;
                     }
 
-                    .security-wrapper input {
-                        flex: 1;
-                    }
+                    .security-wrapper input { flex: 1; }
 
                     .form-buttons {
                         display: flex;
@@ -377,23 +327,12 @@ if (!isset($_SESSION['security_code'])) {
                         border: 2px solid #ddd;
                     }
 
-                    .btn-secondary:hover {
-                        background: #e5e7eb;
-                    }
+                    .btn-secondary:hover { background: #e5e7eb; }
 
                     @media (max-width: 768px) {
-                        .form-row {
-                            grid-template-columns: 1fr;
-                        }
-
-                        .form-buttons {
-                            flex-direction: column;
-                        }
-
-                        .btn {
-                            width: 100%;
-                            justify-content: center;
-                        }
+                        .form-row { grid-template-columns: 1fr; }
+                        .form-buttons { flex-direction: column; }
+                        .btn { width: 100%; justify-content: center; }
                     }
                 </style>
 
@@ -401,18 +340,12 @@ if (!isset($_SESSION['security_code'])) {
                     <h1 class="page-title"><i class="fas fa-user-plus" style="margin-right: 10px;"></i>Add New Member</h1>
                     <p class="page-subtitle">Fill in the form below to register a new party member</p>
 
-                    <?php if (!empty($success)): ?>
-                        <div class="alert alert-success show">
-                            <i class="fas fa-check-circle" style="margin-right: 10px;"></i><?php echo $success; ?>
-                        </div>
-                    <?php endif; ?>
-
                     <?php if (!empty($errors)): ?>
                         <div class="alert alert-error show">
                             <i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>Please fix the following errors:
                             <ul style="margin-top: 10px;">
                                 <?php foreach ($errors as $error): ?>
-                                    <li><?php echo $error; ?></li>
+                                    <li><?php echo htmlspecialchars($error); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -435,7 +368,7 @@ if (!isset($_SESSION['security_code'])) {
                                 <label>Gender <span class="required">*</span></label>
                                 <select name="gender" required>
                                     <option value="">Select Gender</option>
-                                    <option value="Male" <?php echo ($form_data['gender'] ?? '') === 'Male' ? 'selected' : ''; ?>>Male</option>
+                                    <option value="Male"   <?php echo ($form_data['gender'] ?? '') === 'Male'   ? 'selected' : ''; ?>>Male</option>
                                     <option value="Female" <?php echo ($form_data['gender'] ?? '') === 'Female' ? 'selected' : ''; ?>>Female</option>
                                 </select>
                             </div>
@@ -461,10 +394,10 @@ if (!isset($_SESSION['security_code'])) {
                                 <label>Education Level <span class="required">*</span></label>
                                 <select name="education" required>
                                     <option value="">Select Education Level</option>
-                                    <option value="Primary School" <?php echo ($form_data['education'] ?? '') === 'Primary School' ? 'selected' : ''; ?>>Primary School</option>
+                                    <option value="Primary School"   <?php echo ($form_data['education'] ?? '') === 'Primary School'   ? 'selected' : ''; ?>>Primary School</option>
                                     <option value="Secondary School" <?php echo ($form_data['education'] ?? '') === 'Secondary School' ? 'selected' : ''; ?>>Secondary School</option>
-                                    <option value="Diploma" <?php echo ($form_data['education'] ?? '') === 'Diploma' ? 'selected' : ''; ?>>Diploma</option>
-                                    <option value="Degree" <?php echo ($form_data['education'] ?? '') === 'Degree' ? 'selected' : ''; ?>>Degree</option>
+                                    <option value="Diploma"          <?php echo ($form_data['education'] ?? '') === 'Diploma'          ? 'selected' : ''; ?>>Diploma</option>
+                                    <option value="Degree"           <?php echo ($form_data['education'] ?? '') === 'Degree'           ? 'selected' : ''; ?>>Degree</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -478,8 +411,8 @@ if (!isset($_SESSION['security_code'])) {
                                 <label>Country <span class="required">*</span></label>
                                 <select name="country" required>
                                     <option value="">Select Country</option>
-                                    <option value="Somalia" <?php echo ($form_data['country'] ?? '') === 'Somalia' ? 'selected' : ''; ?>>Somalia</option>
-                                    <option value="Kenya" <?php echo ($form_data['country'] ?? '') === 'Kenya' ? 'selected' : ''; ?>>Kenya</option>
+                                    <option value="Somalia"  <?php echo ($form_data['country'] ?? '') === 'Somalia'  ? 'selected' : ''; ?>>Somalia</option>
+                                    <option value="Kenya"    <?php echo ($form_data['country'] ?? '') === 'Kenya'    ? 'selected' : ''; ?>>Kenya</option>
                                     <option value="Ethiopia" <?php echo ($form_data['country'] ?? '') === 'Ethiopia' ? 'selected' : ''; ?>>Ethiopia</option>
                                 </select>
                             </div>

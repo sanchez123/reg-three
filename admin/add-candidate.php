@@ -12,6 +12,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 $admin_id = $_SESSION['admin_id'];
 $errors   = [];
+$form_data = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form_data = [
@@ -103,9 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Save and redirect — happens before any HTML output
+    // Save and redirect — no HTML output yet
     if (empty($errors)) {
-        $status = 'pending';
+        $status = 'approved'; // Admin-added candidates are always approved
+
         $insert = $conn->prepare(
             "INSERT INTO candidates (first_name, mothers_name, gender, date_of_birth, place_of_birth,
              government_id, education, occupation, country, state, district, email, phone, photo_path, status, added_by)
@@ -136,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($insert->execute()) {
                 log_audit($admin_id, 'CREATE', 'candidates', $insert->insert_id, ['name' => $form_data['first_name'] . ' ' . $form_data['mothers_name']]);
                 $_SESSION['flash_success'] = 'Candidate added successfully!';
+                $insert->close();
                 header('Location: candidates-list.php');
                 exit();
             } else {
@@ -146,10 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Database error: ' . $conn->error;
         }
     }
-
-    // Keep form data populated on error
-} else {
-    $form_data = [];
 }
 
 // Only output HTML after all possible redirects

@@ -3,7 +3,7 @@
 require_once 'config.php';
 
 $candidates = [];
-$stmt = $conn->prepare("SELECT first_name, mothers_name, email, phone, photo_path, country, education FROM candidates WHERE status = 'approved' ORDER BY registration_date DESC");
+$stmt = $conn->prepare("SELECT first_name, gender, place_of_birth, education, occupation, country, state, district FROM candidates WHERE status = 'approved' ORDER BY registration_date DESC");
 $stmt->execute();
 $res = $stmt->get_result();
 while ($row = $res->fetch_assoc()) {
@@ -93,20 +93,14 @@ while ($row = $res->fetch_assoc()) {
 
       <thead>
         <tr>
-          <th>#</th>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Gender</th>
-          <th>Place of Birth</th>
-          <th>Date of Birth</th>
-          <th>Government ID</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Education</th>
-          <th>Occupation</th>
-          <th>Country</th>
-          <th>State</th>
-          <th>District</th>
+          <th>Name</th>
+                    <th>Gender</th>
+                    <th>Place of Birth</th>
+                    <th>Education</th>
+                    <th>Occupation</th>
+                    <th>Country</th>
+                    <th>State</th>
+                    <th>District</th>
    
         </tr>
       </thead>
@@ -118,13 +112,14 @@ while ($row = $res->fetch_assoc()) {
         <?php if (count($candidates) > 0): ?>
             <?php $counter = 1; foreach ($candidates as $candidate): ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($counter); ?></td>
                     <td><?php echo htmlspecialchars($candidate['first_name']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['mothers_name']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['email']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['phone']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['country']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['education']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['gender']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['place_of_birth']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['education']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['occupation']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['country']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['state']); ?></td>
+                                        <td><?php echo htmlspecialchars($candidate['district']); ?></td>
                 </tr>
                 <?php $counter++; ?>
             <?php endforeach; ?>
