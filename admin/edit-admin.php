@@ -94,9 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_email'] = $email;
             }
 
-            $_SESSION['flash_success'] = 'Admin updated successfully';
+            // Success message including updated full name
+            $_SESSION['flash_success'] = 'Admin with name "' . $full_name . '" updated successfully';
+            // Ensure session data is written before redirecting
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
             ob_end_clean();  // Clear the buffer before redirecting
-            header('Location: manage-admin.php');
+            // Redirect directly to edit page to avoid double-redirects which can sometimes interfere with flash display
+            header('Location: edit-admin.php?id=' . intval($admin_id));
             exit();
         } else {
             $errors[] = 'Error updating admin: ' . $conn->error;

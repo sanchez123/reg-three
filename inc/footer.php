@@ -26,116 +26,103 @@
 
 
 <script>
-
+// Table pagination/filtering script - only run if the table controls exist on the page
+(function(){
   const countryFilter = document.getElementById('countryFilter');
+  if (!countryFilter) return; // nothing to do on pages without these controls
+
   const educationFilter = document.getElementById('educationFilter');
   const entriesPerPage = document.getElementById('entriesPerPage');
-
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const pageInfo = document.getElementById('pageInfo');
-
   const rows = Array.from(document.querySelectorAll('#tableBody tr'));
 
   let currentPage = 1;
 
   function getFilteredRows(){
-
     return rows.filter(row => {
-
       const country = row.dataset.country;
       const education = row.dataset.education;
 
-      const countryMatch =
-        countryFilter.value === 'all' ||
-        country === countryFilter.value;
-
-      const educationMatch =
-        educationFilter.value === 'all' ||
-        education === educationFilter.value;
+      const countryMatch = countryFilter.value === 'all' || country === countryFilter.value;
+      const educationMatch = (educationFilter && educationFilter.value === 'all') || (educationFilter ? education === educationFilter.value : true);
 
       return countryMatch && educationMatch;
-
     });
-
   }
 
   function displayTable(){
-
     const filteredRows = getFilteredRows();
+    const limit = parseInt(entriesPerPage.value || 10);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / limit));
 
-    const limit = parseInt(entriesPerPage.value);
+    if(currentPage > totalPages) currentPage = 1;
 
-    const totalPages = Math.ceil(filteredRows.length / limit);
-
-    if(currentPage > totalPages){
-      currentPage = 1;
-    }
-
-    rows.forEach(row => {
-      row.style.display = 'none';
-    });
+    rows.forEach(row => row.style.display = 'none');
 
     const start = (currentPage - 1) * limit;
     const end = start + limit;
+    filteredRows.slice(start, end).forEach(row => row.style.display = '');
 
-    filteredRows.slice(start, end).forEach(row => {
-      row.style.display = '';
-    });
-
-    pageInfo.innerText =
-      `Page ${currentPage} of ${totalPages || 1}`;
-
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled =
-      currentPage === totalPages ||
-      totalPages === 0;
-
+    if (pageInfo) pageInfo.innerText = `Page ${currentPage} of ${totalPages || 1}`;
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
   }
 
-  countryFilter.addEventListener('change', () => {
-    currentPage = 1;
-    displayTable();
-  });
-
-  educationFilter.addEventListener('change', () => {
-    currentPage = 1;
-    displayTable();
-  });
-
-  entriesPerPage.addEventListener('change', () => {
-    currentPage = 1;
-    displayTable();
-  });
-
-  prevBtn.addEventListener('click', () => {
-    currentPage--;
-    displayTable();
-  });
-
-  nextBtn.addEventListener('click', () => {
-    currentPage++;
-    displayTable();
-  });
+  if (countryFilter) countryFilter.addEventListener('change', () => { currentPage = 1; displayTable(); });
+  if (educationFilter) educationFilter.addEventListener('change', () => { currentPage = 1; displayTable(); });
+  if (entriesPerPage) entriesPerPage.addEventListener('change', () => { currentPage = 1; displayTable(); });
+  if (prevBtn) prevBtn.addEventListener('click', () => { currentPage--; displayTable(); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { currentPage++; displayTable(); });
 
   displayTable();
-
+})();
 </script>
 
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
 <?php if (session_status() !== PHP_SESSION_ACTIVE) session_start(); ?>
-<?php if (!empty($_SESSION['flash_success'])): ?>
-Swal.fire({icon: 'success', title: 'Success', text: '<?php echo addslashes($_SESSION['flash_success']); ?>', timer: 3000});
-<?php unset($_SESSION['flash_success']); ?>
-<?php endif; ?>
+<script>
+(function(){
+  // Expose a global helper so other scripts and AJAX responses can show system messages
+  function showSystemMessage(type, message, options = {}){
+    // Log for debugging (helps when page reloads quickly)
+    if(type === 'success') console.log('System message (success):', message);
+    else console.error('System message (error):', message);
 
-<?php if (!empty($_SESSION['flash_error'])): ?>
-Swal.fire({icon: 'error', title: 'Error', text: '<?php echo addslashes($_SESSION['flash_error']); ?>'});
-<?php unset($_SESSION['flash_error']); ?>
-<?php endif; ?>
+    const cfg = {
+      icon: type === 'success' ? 'success' : 'error',
+      title: type === 'success' ? 'Success' : 'Error',
+      html: message,
+      showCloseButton: true,
+      showConfirmButton: !!(options.confirm !== false),
+      timer: type === 'success' ? (options.timer || 3000) : undefined,
+      timerProgressBar: type === 'success'
+    };
+
+    Swal.fire(cfg);
+  }
+
+  // Make callable from anywhere
+  window.showSystemMessage = showSystemMessage;
+
+  // Read flash messages from PHP session (safe JSON encoding)
+  const flashSuccess = <?php echo isset($_SESSION['flash_success']) ? json_encode($_SESSION['flash_success']) : 'null'; ?>;
+  const flashError = <?php echo isset($_SESSION['flash_error']) ? json_encode($_SESSION['flash_error']) : 'null'; ?>;
+
+  if (flashSuccess){
+    showSystemMessage('success', flashSuccess, {timer:3000, confirm:false});
+    <?php unset($_SESSION['flash_success']); ?>
+  }
+
+  if (flashError){
+    showSystemMessage('error', flashError, {confirm:true});
+    <?php unset($_SESSION['flash_error']); ?>
+  }
+
+})();
 </script>
 
 <!-- Admin UI JS -->

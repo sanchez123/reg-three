@@ -89,11 +89,6 @@ if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['total_admins'] 
         <div class="stat-card-value"><?php echo htmlspecialchars($stats['candidates_approved']); ?></div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-card-icon"><i class="fas fa-user-shield"></i></div>
-        <div class="stat-card-label">Total Admins</div>
-        <div class="stat-card-value"><?php echo htmlspecialchars($stats['total_admins']); ?></div>
-    </div>
 </div>
 
 <!-- QUICK ACTIONS -->
@@ -133,10 +128,30 @@ if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['total_admins'] 
         <h3 style="color: #083a9c; margin-bottom: 15px; font-size: 18px;">
             <i class="fas fa-chart-bar" style="margin-right: 10px;"></i>Statistics
         </h3>
-        <div style="font-size: 14px; color: #666;">
-            <p style="margin-bottom: 8px;"><strong>Avg Members/Month:</strong> <?php echo $stats['total_members'] > 0 ? ceil($stats['total_members'] / 12) : 0; ?></p>
-            <p style="margin-bottom: 8px;"><strong>Approval Rate:</strong> <?php echo $stats['total_members'] > 0 ? round(($stats['members_approved'] / $stats['total_members']) * 100, 1) : 0; ?>%</p>
-            <p style="margin-bottom: 8px;"><strong>Pending Rate:</strong> <?php echo $stats['total_members'] > 0 ? round(($stats['members_pending'] / $stats['total_members']) * 100, 1) : 0; ?>%</p>
+        <div style="font-size: 14px; color: #666; line-height:1.6;">
+            <!-- Members statistics (approved only for averages) -->
+            <p style="margin-bottom: 8px;"><strong>Avg Members/Month (approved):</strong>
+                <?php echo $stats['members_approved'] > 0 ? ceil($stats['members_approved'] / 12) : 0; ?>
+            </p>
+            <p style="margin-bottom: 8px;"><strong>Members Approval Rate:</strong>
+                <?php echo $stats['total_members'] > 0 ? round(($stats['members_approved'] / $stats['total_members']) * 100, 1) : 0; ?>%
+            </p>
+            <p style="margin-bottom: 8px;"><strong>Members Pending Rate:</strong>
+                <?php echo $stats['total_members'] > 0 ? round(($stats['members_pending'] / $stats['total_members']) * 100, 1) : 0; ?>%
+            </p>
+
+            <hr style="border:none; border-top:1px solid #eee; margin:12px 0;">
+
+            <!-- Candidates statistics (approved only for averages) -->
+            <p style="margin-bottom: 8px;"><strong>Avg Candidates/Month (approved):</strong>
+                <?php echo $stats['candidates_approved'] > 0 ? ceil($stats['candidates_approved'] / 12) : 0; ?>
+            </p>
+            <p style="margin-bottom: 8px;"><strong>Candidates Approval Rate:</strong>
+                <?php echo $stats['total_candidates'] > 0 ? round(($stats['candidates_approved'] / $stats['total_candidates']) * 100, 1) : 0; ?>%
+            </p>
+            <p style="margin-bottom: 8px;"><strong>Candidates Pending Rate:</strong>
+                <?php echo $stats['total_candidates'] > 0 ? round(($stats['candidates_pending'] / $stats['total_candidates']) * 100, 1) : 0; ?>%
+            </p>
         </div>
     </div>
 </div>

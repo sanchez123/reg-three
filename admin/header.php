@@ -363,7 +363,7 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
                 <li class="has-dropdown">
                     <a href="#" class="menu-toggle">
                         <i class="fas fa-user-shield"></i>
-                        <span>Profile</span>
+                        <span>Admin Profile</span>
                         <i class="fas fa-chevron-down" style="margin-left:auto;"></i>
                     </a>
                     <ul class="submenu">
