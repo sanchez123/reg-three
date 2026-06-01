@@ -7,7 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once '../config.php';
 
-require_role('super');
+// Ensure admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: ../login.php');
+    exit();
+}
 
 if (!isset($_GET['id'])) {
     header('Location: manage-admin.php');
@@ -17,7 +21,7 @@ if (!isset($_GET['id'])) {
 $admin_id = intval($_GET['id']);
 $errors = [];
 
-$stmt = $conn->prepare("SELECT id, username, email, full_name, phone, role, status, profile_photo FROM admin_users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, username, email, full_name, phone, profile_photo FROM admin_users WHERE id = ?");
 if ($stmt) {
     $stmt->bind_param("i", $admin_id);
     $stmt->execute();
@@ -36,8 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name = sanitize_input($_POST['full_name'] ?? '');
     $email = sanitize_input($_POST['email'] ?? '');
     $phone = sanitize_input($_POST['phone'] ?? '');
-    $role = in_array($_POST['role'] ?? '', ['super','admin']) ? $_POST['role'] : 'admin';
-    $status = in_array($_POST['status'] ?? 'active', ['active','inactive']) ? $_POST['status'] : 'active';
 
     if (empty($full_name) || empty($email)) {
         $errors[] = 'Name and email required';
@@ -76,15 +78,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($new_password)) {
-            $stmt = $conn->prepare("UPDATE admin_users SET full_name=?, email=?, phone=?, role=?, profile_photo=?, status=?, password=? WHERE id=?");
-            $stmt->bind_param("sssssssi", $full_name, $email, $phone, $role, $profile_photo, $status, $hashed, $admin_id);
+            $stmt = $conn->prepare("UPDATE admin_users SET full_name=?, email=?, phone=?, profile_photo=?, password=? WHERE id=?");
+            $stmt->bind_param("sssssi", $full_name, $email, $phone, $profile_photo, $hashed, $admin_id);
         } else {
-            $stmt = $conn->prepare("UPDATE admin_users SET full_name=?, email=?, phone=?, role=?, profile_photo=?, status=? WHERE id=?");
-            $stmt->bind_param("ssssssi", $full_name, $email, $phone, $role, $profile_photo, $status, $admin_id);
+            $stmt = $conn->prepare("UPDATE admin_users SET full_name=?, email=?, phone=?, profile_photo=? WHERE id=?");
+            $stmt->bind_param("ssssi", $full_name, $email, $phone, $profile_photo, $admin_id);
         }
 
         if ($stmt->execute()) {
             log_audit($_SESSION['admin_id'], 'UPDATE', 'admin_users', $admin_id, ['action'=>'Admin updated']);
+
+            // If updating current user, refresh the session admin_name
+            if (intval($admin_id) === intval($_SESSION['admin_id'])) {
+                $_SESSION['admin_name'] = $full_name;
+                $_SESSION['admin_email'] = $email;
+            }
+
             $_SESSION['flash_success'] = 'Admin updated successfully';
             ob_end_clean();  // Clear the buffer before redirecting
             header('Location: manage-admin.php');
@@ -118,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </style>
 
 <div class="form-container-admin">
-    <h1 class="page-title"><i class="fas fa-edit" style="margin-right:10px;"></i>Edit Admin</h1>
+    <h1 class="page-title"><i class="fas fa-user-edit" style="margin-right:10px;"></i>Edit My Profile</h1>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-error">
@@ -159,34 +168,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="password" name="password">
             </div>
             <div class="form-group">
-                <label>Role</label>
-                <select name="role">
-                    <option value="admin" <?php echo $admin['role']==='admin' ? 'selected' : ''; ?>>Admin</option>
-                    <option value="super" <?php echo $admin['role']==='super' ? 'selected' : ''; ?>>Super Admin</option>
-                </select>
-            </div>
+                           <label>Profile Photo</label>
+                           <input type="file" name="profile_photo" accept="image/*">
+                           <?php if (!empty($admin['profile_photo']) && file_exists(__DIR__ . '/../' . $admin['profile_photo'])): ?>
+                               <div class="current-photo">
+                                   <img src="<?php echo '../' . htmlspecialchars($admin['profile_photo']); ?>" alt="Profile Photo">
+                                   <div><a href="<?php echo '../' . htmlspecialchars($admin['profile_photo']); ?>" download class="btn btn-secondary" style="padding:6px 10px; font-size:12px; margin-top:8px;">Download</a></div>
+                               </div>
+                           <?php endif; ?>
+                       </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label>Profile Photo</label>
-                <input type="file" name="profile_photo" accept="image/*">
-                <?php if (!empty($admin['profile_photo']) && file_exists(__DIR__ . '/../' . $admin['profile_photo'])): ?>
-                    <div class="current-photo">
-                        <img src="<?php echo '../' . htmlspecialchars($admin['profile_photo']); ?>" alt="Profile Photo">
-                        <div><a href="<?php echo '../' . htmlspecialchars($admin['profile_photo']); ?>" download class="btn btn-secondary" style="padding:6px 10px; font-size:12px; margin-top:8px;">Download</a></div>
-                    </div>
-                <?php endif; ?>
-            </div>
 
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status">
-                    <option value="active" <?php echo $admin['status']==='active' ? 'selected' : ''; ?>>Active</option>
-                    <option value="inactive" <?php echo $admin['status']==='inactive' ? 'selected' : ''; ?>>Inactive</option>
-                </select>
-            </div>
-        </div>
 
         <div class="form-buttons">
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>

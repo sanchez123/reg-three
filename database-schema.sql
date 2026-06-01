@@ -1,4 +1,5 @@
 -- TIIR Party Registration System Database Schema
+-- Single Admin System Configuration
 
 -- Create Admin Users Table
 CREATE TABLE admin_users (
@@ -7,9 +8,10 @@ CREATE TABLE admin_users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     full_name VARCHAR(100),
+    phone VARCHAR(30) NULL,
+    profile_photo VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP NULL,
-    status ENUM('active', 'inactive') DEFAULT 'active'
+    last_login TIMESTAMP NULL
 );
 
 -- Create Members Table
@@ -72,26 +74,19 @@ CREATE TABLE audit_log (
     FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
 );
 
--- Add role, phone, profile_photo columns to admin_users
-ALTER TABLE admin_users
-    ADD COLUMN role ENUM('super','admin') NOT NULL DEFAULT 'admin',
-ADD COLUMN phone VARCHAR(30) NULL,
-ADD COLUMN profile_photo VARCHAR(255) NULL;
-
--- Insert Default Admin User (username: admin, password: admin123)
--- IMPORTANT: Replace <HASH> with the bcrypt hash from generate-hash.php
-INSERT INTO admin_users (username, email, password, full_name, role, status)
-VALUES ('admin', 'admin@tiir.com', '<HASH_FROM_GENERATE_HASH_PHP>', 'Administrator', 'super', 'active')
-    ON DUPLICATE KEY UPDATE role = 'super', password = '<HASH_FROM_GENERATE_HASH_PHP>';
-
--- Create Indexes
-CREATE INDEX idx_admin_role ON admin_users(role);
--- Create Indexes for better performance
+-- Add Indexes
+CREATE INDEX idx_admin_username ON admin_users(username);
+CREATE INDEX idx_admin_email ON admin_users(email);
 CREATE INDEX idx_members_email ON members(email);
 CREATE INDEX idx_members_phone ON members(phone);
 CREATE INDEX idx_members_status ON members(status);
 CREATE INDEX idx_candidates_email ON candidates(email);
 CREATE INDEX idx_candidates_phone ON candidates(phone);
 CREATE INDEX idx_candidates_status ON candidates(status);
-CREATE INDEX idx_admin_username ON admin_users(username);
+
+-- Insert Default Admin User (username: admin, password: admin123)
+-- IMPORTANT: Replace <HASH> with the bcrypt hash from generate-hash.php
+INSERT INTO admin_users (username, email, password, full_name, phone)
+VALUES ('admin', 'admin@tiir.com', '<HASH_FROM_GENERATE_HASH_PHP>', 'Administrator', '+252123456789')
+    ON DUPLICATE KEY UPDATE password = '<HASH_FROM_GENERATE_HASH_PHP>';
 

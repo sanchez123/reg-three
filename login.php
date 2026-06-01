@@ -22,7 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Username and password are required';
     } else {
         // Query database
-        $query = "SELECT id, username, password, full_name, email, status FROM admin_users WHERE username = ?";
+        // NOTE: Some database schemas may not include `status` column (single-admin schema).
+        // Select the columns that always exist and handle `status` if present.
+        $query = "SELECT id, username, password, full_name, email FROM admin_users WHERE username = ?";
         $stmt = $conn->prepare($query);
 
         if ($stmt) {
@@ -33,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result->num_rows === 1) {
                 $admin = $result->fetch_assoc();
 
-                if ($admin['status'] === 'inactive') {
+                // If the status column exists (older schema), respect it; otherwise assume active
+                if (isset($admin['status']) && $admin['status'] === 'inactive') {
                     $error = 'Your account has been deactivated';
                 } elseif (verify_password($password, $admin['password'])) {
                     // Login successful
@@ -289,4 +292,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+
+
 

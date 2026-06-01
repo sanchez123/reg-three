@@ -46,8 +46,8 @@ if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['candidates_pend
 $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM candidates WHERE status = 'approved'");
 if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['candidates_approved'] = $r->fetch_assoc()['cnt']; $stmt->close(); }
 
-// Admins total
-$stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM admin_users WHERE status = 'active'");
+// Admins total (single-admin system or schema without status column)
+$stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM admin_users");
 if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['total_admins'] = $r->fetch_assoc()['cnt']; $stmt->close(); }
 ?>
 
@@ -113,7 +113,7 @@ if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['total_admins'] 
                 <i class="fas fa-plus"></i> Add New Candidate
             </a>
             <a href="manage-admin.php" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; text-align: center; font-weight: 600; transition: 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(99, 102, 241, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                <i class="fas fa-users-cog"></i> Manage Admins
+                <i class="fas fa-user-edit"></i> Edit My Profile
             </a>
         </div>
     </div>

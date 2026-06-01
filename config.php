@@ -9,7 +9,7 @@ ini_set('error_log', __DIR__ . '/error.log');
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'tiir_registration');
+define('DB_NAME', 'tiir');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -102,11 +102,33 @@ function upload_file($file, $upload_dir = 'uploads/members/')
 function get_admin_role($admin_id = null)
 {
     global $conn;
+    // Determine admin id
     if ($admin_id === null && isset($_SESSION['admin_id'])) {
         $admin_id = intval($_SESSION['admin_id']);
     }
     if (!$admin_id) return null;
 
+    // Check if the `role` column exists in the current schema; if it doesn't, assume single-admin (super)
+    $col_check_sql = "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'admin_users' AND column_name = 'role' LIMIT 1";
+    $check_stmt = $conn->prepare($col_check_sql);
+    if ($check_stmt) {
+        $dbName = defined('DB_NAME') ? DB_NAME : '';
+        $check_stmt->bind_param('s', $dbName);
+        $check_stmt->execute();
+        $check_res = $check_stmt->get_result();
+        $exists = ($check_res && $check_res->num_rows > 0);
+        $check_stmt->close();
+    } else {
+        // If we can't check, be permissive and assume role exists
+        $exists = false;
+    }
+
+    if (!$exists) {
+        // No role column — treat the admin as 'super' for compatibility with single-admin schema
+        return 'super';
+    }
+
+    // Role column exists — fetch it
     $stmt = $conn->prepare("SELECT role FROM admin_users WHERE id = ?");
     if ($stmt) {
         $stmt->bind_param("i", $admin_id);
@@ -171,4 +193,3 @@ function get_error_message($error_code) {
 
     return $errors[$error_code] ?? 'An error occurred';
 }
-
