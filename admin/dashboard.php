@@ -12,9 +12,19 @@ $stats = [
     'total_admins' => 0
 ];
 
+$error_msg = '';
+
 // Members total
 $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM members");
-if ($stmt) { $stmt->execute(); $r = $stmt->get_result(); $stats['total_members'] = $r->fetch_assoc()['cnt']; $stmt->close(); }
+if (!$stmt) {
+    error_log("Query error: " . $conn->error);
+    $error_msg = "Database error occurred";
+} else {
+    $stmt->execute();
+    $r = $stmt->get_result();
+    $stats['total_members'] = $r->fetch_assoc()['cnt'];
+    $stmt->close();
+}
 
 // Members pending
 $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM members WHERE status = 'pending'");

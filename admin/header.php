@@ -1,4 +1,6 @@
 <?php
+// Configure session for domain compatibility
+require_once '../inc/session-config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,7 +13,7 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 $admin_id = $_SESSION['admin_id'];
-$admin_name = $_SESSION['admin_name'];
+$admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin';
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -313,7 +315,7 @@ $admin_name = $_SESSION['admin_name'];
         transition: transform 0.2s ease;
     }
     </style>
-<script src="/registration/assets/js/admin-ui.js"></script>
+<script src="../assets/js/admin-ui.js"></script>
 </head>
 <body>
     <div class="admin-wrapper">

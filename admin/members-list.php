@@ -4,6 +4,7 @@
 // then tried to call header("Location: ...") inside the delete block — causing
 // "headers already sent" warning. Now mirrors the correct pattern in candidates-list.php.
 
+require_once '../inc/session-config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

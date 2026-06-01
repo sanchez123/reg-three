@@ -1,4 +1,6 @@
 <?php
+// Configure session for domain compatibility
+require_once 'inc/session-config.php';
 session_start();
 require_once 'config.php';
 
@@ -280,16 +282,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        placeholder="Enter your password">
             </div>
 
-            <div class="forgot-password">
-                <a href="#">Forgot Password?</a>
-            </div>
-
             <button type="submit" class="submit-btn">Login to Dashboard</button>
         </form>
 
-        <div class="login-footer">
-            <p>Demo Credentials: <strong>admin</strong> / <strong>admin123</strong></p>
-        </div>
+
     </div>
 </body>
 </html>

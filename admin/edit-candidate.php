@@ -1,5 +1,6 @@
 <?php
 // All PHP logic BEFORE header.php to allow redirects on auth failure only
+require_once '../inc/session-config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

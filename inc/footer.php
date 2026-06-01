@@ -139,6 +139,6 @@ Swal.fire({icon: 'error', title: 'Error', text: '<?php echo addslashes($_SESSION
 </script>
 
 <!-- Admin UI JS -->
-<script src="/registration/assets/js/admin-ui.js"></script>
+<script src="assets/js/admin-ui.js"></script>
 </body>
 </html>

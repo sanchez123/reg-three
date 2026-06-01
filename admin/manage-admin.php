@@ -1,6 +1,7 @@
 <?php
 ob_start();  // START OUTPUT BUFFERING - Add this FIRST!
 
+require_once '../inc/session-config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

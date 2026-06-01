@@ -1,5 +1,6 @@
 <?php
 // All PHP logic BEFORE any HTML output to allow redirects
+require_once '../inc/session-config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

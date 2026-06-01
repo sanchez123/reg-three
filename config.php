@@ -1,4 +1,10 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error.log');
+
 // Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -11,6 +17,7 @@ $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 // Check connection
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
+    http_response_code(500);
     die("Database connection failed. Please contact administrator.");
 }
 
@@ -164,5 +171,4 @@ function get_error_message($error_code) {
 
     return $errors[$error_code] ?? 'An error occurred';
 }
-?>
 

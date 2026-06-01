@@ -6,7 +6,7 @@
 <li><a href="https://xisbigatiir.so/page/3/Mabaadiida-Xisbiga"><span>Mabaadii&#039;da Xisbiga</span></a></li>
 <li><a href="https://xisbigatiir.so/page/4/Ujeedooyinka-Xisbiga"><span>Ujeedooyinka Xisbiga</span></a></li>
 <li><a href="https://xisbigatiir.so/page/12/Dastuurka-Xisbiga"><span>Dastuurka Xisbiga</span></a></li>
-<li class="active"><a href="http://localhost/registration"><span>Registration</span></a></li>
+<li class="active"><a href="https://members.abdidubat.com"><span>Registration</span></a></li>
 </ul>
 </li>
 <li><a href="https://xisbigatiir.so/category/2/Wararka-Xisbiga"><span>Wararka</span></a></li>
