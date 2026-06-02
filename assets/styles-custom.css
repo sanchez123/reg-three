@@ -7,6 +7,103 @@
     }
 
 /* =========================
+RESPONSIVE MENU TOGGLE
+========================= */
+
+.menu-toggle-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 4px;
+    transition: 0.3s ease;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    z-index: 1001;
+}
+
+.menu-toggle-btn:hover {
+    background: #f0f0f0;
+    color: #083a9c;
+}
+
+#menu {
+    transition: 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle-btn {
+        display: block;
+    }
+
+    #menu {
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        overflow-y: auto;
+        z-index: 1000;
+        padding-top: 60px;
+        transition: 0.3s ease;
+    }
+
+    #menu.active {
+        left: 0;
+    }
+
+    #menu ul {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #menu ul li {
+        display: block;
+        width: 100%;
+    }
+
+    #menu ul li a {
+        display: block;
+        padding: 12px 15px !important;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    #menu ul li ul {
+        position: static;
+        background: #f9f9f9;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    #menu ul li.active ul {
+        max-height: 500px;
+    }
+
+    #menu ul li ul li a {
+        padding-left: 30px !important;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 600px) {
+    #menu {
+        width: 100%;
+        left: -100%;
+    }
+
+    #menu.active {
+        left: 0;
+    }
+}
+
+/* =========================
 CLASSIC REGISTRATION FORM
 ========================= */
 

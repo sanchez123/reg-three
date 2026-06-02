@@ -43,15 +43,32 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
 
         /* SIDEBAR */
         .sidebar {
-            width: 260px;
-            background: linear-gradient(180deg, #083a9c 0%, #0f4ecd 100%);
-            color: white;
-            padding: 30px 20px;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
-        }
+             width: 260px;
+             background: linear-gradient(180deg, #083a9c 0%, #0f4ecd 100%);
+             color: white;
+             padding: 30px 20px;
+             position: fixed;
+             height: 100vh;
+             overflow-y: auto;
+             box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+         }
+
+         .sidebar-close-btn {
+             display: none;
+             background: none;
+             border: none;
+             color: white;
+             font-size: 28px;
+             cursor: pointer;
+             padding: 10px;
+             border-radius: 8px;
+             transition: 0.3s ease;
+             margin-bottom: 15px;
+         }
+
+         .sidebar-close-btn:hover {
+             background: rgba(255, 255, 255, 0.15);
+         }
 
         .sidebar-logo {
             font-size: 20px;
@@ -118,11 +135,18 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
             z-index: 100;
         }
 
-        .topbar-left h2 {
-            font-size: 24px;
-            color: #083a9c;
-            font-weight: 700;
-        }
+        .topbar-left {
+             display: flex;
+             align-items: center;
+             gap: 15px;
+         }
+
+         .topbar-left h2 {
+             font-size: 24px;
+             color: #083a9c;
+             font-weight: 700;
+             margin: 0;
+         }
 
         .topbar-right {
             display: flex;
@@ -238,6 +262,23 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
             color: #083a9c;
         }
 
+        /* HAMBURGER MENU TOGGLE */
+        .menu-toggle-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #333;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: 0.3s ease;
+        }
+
+        .menu-toggle-btn:hover {
+            background: #f0f4ff;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 1024px) {
             .sidebar {
@@ -253,32 +294,64 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
             }
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -260px;
-                height: 100vh;
-                z-index: 1000;
-                transition: 0.3s ease;
-            }
+         @media (max-width: 768px) {
+              .sidebar {
+                  position: fixed;
+                  left: -260px;
+                  height: 100vh;
+                  z-index: 1000;
+                  transition: 0.3s ease;
+                  width: 260px;
+              }
 
-            .sidebar.active {
-                left: 0;
-            }
+              .sidebar.active {
+                  left: 0;
+              }
 
-            .main-content {
-                margin-left: 0;
-            }
+              .sidebar-close-btn {
+                  display: block;
+              }
 
-            .topbar {
-                flex-direction: column;
-                gap: 15px;
-            }
+              .menu-toggle-btn {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+              }
 
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+              .main-content {
+                  margin-left: 0;
+                  width: 100%;
+              }
+
+              .topbar {
+                  flex-direction: column;
+                  gap: 15px;
+                  width: 100%;
+              }
+
+              .topbar-left {
+                  display: flex;
+                  align-items: center;
+                  gap: 15px;
+                  flex-direction: row;
+              }
+
+              .topbar-left h2 {
+                  font-size: 20px;
+                  margin: 0;
+              }
+
+              .topbar-right {
+                  display: flex;
+                  align-items: center;
+                  gap: 15px;
+                  justify-content: flex-end;
+              }
+
+              .stats-grid {
+                  grid-template-columns: 1fr;
+              }
+          }
     /* Submenu styles */
     .sidebar-menu .submenu {
         list-style: none;
@@ -320,11 +393,14 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
 <body>
     <div class="admin-wrapper">
         <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-logo">
-                <i class="fas fa-shield-alt"></i><br>
-                Admin Panel
-            </div>
+         <div class="sidebar">
+             <button class="sidebar-close-btn" id="sidebarClose" title="Close Menu">
+                 <i class="fas fa-times"></i>
+             </button>
+             <div class="sidebar-logo">
+                 <i class="fas fa-shield-alt"></i><br>
+                 Admin Panel
+             </div>
 
             <ul class="sidebar-menu">
                 <li>
@@ -392,6 +468,9 @@ $admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin'
             <!-- TOPBAR -->
             <div class="topbar">
                 <div class="topbar-left">
+                    <button class="menu-toggle-btn" id="sidebarToggle" title="Toggle Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <h2>Dashboard</h2>
                 </div>
                 <div class="topbar-right">

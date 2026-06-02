@@ -1,3 +1,10 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$_SESSION['security_code'] = rand(10000, 99999);
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
  <head>
@@ -57,16 +64,38 @@
 				$("#menu ul li ul li:has(ul)").find("span:first").removeClass("down");
 				$("#menu ul li ul li:has(ul)").find("a:first").addClass("fly");
 			});
+
+			// Mobile menu toggle
+			var menuToggle = document.getElementById('menuToggle');
+			var menu = document.getElementById('menu');
+
+			if (menuToggle && menu) {
+				menuToggle.addEventListener('click', function(e) {
+					e.preventDefault();
+					menu.classList.toggle('active');
+				});
+
+				// Close menu when clicking on a link
+				var menuLinks = menu.querySelectorAll('a');
+				menuLinks.forEach(function(link) {
+					link.addEventListener('click', function() {
+						// Close on mobile after clicking a direct link (not submenu toggle)
+						if (window.innerWidth <= 768) {
+							menu.classList.remove('active');
+						}
+					});
+				});
+
+				// Close menu if clicking outside
+				document.addEventListener('click', function(e) {
+					if (!menu.contains(e.target) && !menuToggle.contains(e.target)) {
+						menu.classList.remove('active');
+					}
+				});
+			}
      });
 		// ]]>
   </script>
-  <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-$_SESSION['security_code'] = rand(10000, 99999);
-?>
 </head>
 
 <body>
@@ -86,4 +115,7 @@ $_SESSION['security_code'] = rand(10000, 99999);
 #menu ul li:last-child a:hover{
   background:#a51d1d;
 }
-</style> 
+</style>
+</body>
+
+</html>

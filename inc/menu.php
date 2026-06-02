@@ -1,3 +1,6 @@
+    <button class="menu-toggle-btn" id="menuToggle" title="Toggle Navigation Menu">
+        <i class="fa fa-bars"></i>
+    </button>
     <div id="menu"><ul id="top-menu" class="main-menu">
 <li><a href="https://xisbigatiir.so/"><span>Bogga Hore</span></a></li>
 <li><a href="#" target=""><span>Xisbiga</span></a><ul class="sub-menu">
