@@ -1,4 +1,34 @@
-<?php include 'header.php'; ?>
+<?php
+// Handle clear logs request — BEFORE any HTML output
+if (isset($_GET['action']) && $_GET['action'] === 'clear_logs') {
+    require_once '../inc/session-config.php';
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    require_once '../config.php';
+
+    // Verify admin is logged in
+    if (isset($_SESSION['admin_id'])) {
+        $admin_id = $_SESSION['admin_id'];
+
+        // Clear all audit logs
+        $clear_query = $conn->prepare("DELETE FROM audit_log");
+        if ($clear_query) {
+            if ($clear_query->execute()) {
+                // Log the clearing action itself
+                log_audit($admin_id, 'DELETE', 'audit_log', 0, ['action' => 'All audit logs cleared']);
+                $_SESSION['flash_success'] = 'Audit Logs cleared Successfully';
+            }
+            $clear_query->close();
+        }
+    }
+
+    // Redirect to avoid re-submission
+    header("Location: audit-log.php");
+    exit();
+}
+
+include 'header.php'; ?>
 
 <?php
 // Pagination
@@ -31,11 +61,46 @@ while ($row = $result->fetch_assoc()) {
 ?>
 
                 <style>
+                    .page-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 30px;
+                        flex-wrap: wrap;
+                        gap: 15px;
+                    }
+
                     .page-title {
                         font-size: 28px;
                         color: #083a9c;
                         font-weight: 700;
-                        margin-bottom: 30px;
+                        margin: 0;
+                    }
+
+                    .clear-logs-btn {
+                        background: linear-gradient(135deg, #d73322 0%, #b91c1c 100%);
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        border: none;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: 0.3s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 6px 18px rgba(215, 51, 34, 0.25);
+                        font-size: 14px;
+                    }
+
+                    .clear-logs-btn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 22px rgba(215, 51, 34, 0.35);
+                    }
+
+                    .clear-logs-btn:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
                     }
 
                     .table-container {
@@ -167,7 +232,14 @@ while ($row = $result->fetch_assoc()) {
                     }
                 </style>
 
-                <h1 class="page-title"><i class="fas fa-history" style="margin-right: 10px;"></i>Audit Log</h1>
+                <div class="page-header">
+                    <h1 class="page-title"><i class="fas fa-history" style="margin-right: 10px;"></i>Audit Log</h1>
+                    <?php if (!empty($logs)): ?>
+                        <button class="clear-logs-btn" onclick="confirmClearLogs()">
+                            <i class="fas fa-trash"></i>Clear Logs
+                        </button>
+                    <?php endif; ?>
+                </div>
 
                 <!-- TABLE -->
                 <div class="table-container">
@@ -250,6 +322,25 @@ while ($row = $result->fetch_assoc()) {
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
+
+                <script>
+                function confirmClearLogs() {
+                    Swal.fire({
+                        title: 'Clear Audit Logs?',
+                        html: 'This will permanently delete all audit logs. This action cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d73322',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Yes, Clear Logs',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '?action=clear_logs';
+                        }
+                    });
+                }
+                </script>
 
 <?php include 'footer.php'; ?>
 
