@@ -97,7 +97,19 @@ document.addEventListener('DOMContentLoaded', function() {
             rowsPerPage = parseInt(this.value);
             currentPage = 1;
             updateTableDisplay();
+            scrollTableIntoView();
         });
+    }
+
+    // Helper to smooth-scroll table into view
+    function scrollTableIntoView() {
+        const tableContainer = document.querySelector('.table-container');
+        if (!tableContainer) return;
+        try {
+            tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) {
+            window.scrollTo({ top: tableContainer.offsetTop, behavior: 'smooth' });
+        }
     }
 
     // Pagination buttons
@@ -106,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentPage > 1) {
                 currentPage--;
                 updateTableDisplay();
-                window.scrollTo(0, 0);
+                scrollTableIntoView();
             }
         });
     }
@@ -117,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentPage < totalPages) {
                 currentPage++;
                 updateTableDisplay();
-                window.scrollTo(0, 0);
+                scrollTableIntoView();
             }
         });
     }
