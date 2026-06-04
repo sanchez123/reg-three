@@ -101,12 +101,8 @@ while ($row = $result->fetch_assoc()) {
     $members[] = $row;
 }
 
-// Get unique countries for filter dropdown
-$countries_result = $conn->query("SELECT DISTINCT country FROM members ORDER BY country");
-$countries        = [];
-while ($row = $countries_result->fetch_assoc()) {
-    $countries[] = $row['country'];
-}
+// Hardcoded countries list (matching registration forms)
+$countries = ['Somalia', 'Kenya', 'Ethiopia'];
 
 // Now safe to output HTML
 include 'header.php';
@@ -582,3 +578,6 @@ include 'header.php';
                 </div>
 
 <?php include 'footer.php'; ?>
+
+<script src="admin-filters.js"></script>
+

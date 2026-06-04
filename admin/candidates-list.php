@@ -87,12 +87,8 @@ while ($row = $result->fetch_assoc()) {
     $candidates[] = $row;
 }
 
-// Unique countries for filter
-$countries_result = $conn->query("SELECT DISTINCT country FROM candidates ORDER BY country");
-$countries        = [];
-while ($row = $countries_result->fetch_assoc()) {
-    $countries[] = $row['country'];
-}
+// Hardcoded countries list (matching registration forms)
+$countries = ['Somalia', 'Kenya', 'Ethiopia'];
 
 // Only output HTML after all possible redirects
 include 'header.php';
@@ -293,3 +289,6 @@ include 'header.php';
 </div>
 
 <?php include 'footer.php'; ?>
+
+<script src="admin-filters.js"></script>
+
