@@ -47,29 +47,30 @@ while ($row = $res->fetch_assoc()) {
 
     <div class="filters">
 
-      <!-- COUNTRY FILTER -->
-      <div class="filter-group">
-        <label>Filter by Country</label>
+       <!-- COUNTRY FILTER -->
+       <div class="filter-group">
+         <label>Filter by Country</label>
 
-        <select id="countryFilter">
-          <option value="all">All Countries</option>
-          <option value="Kenya">Kenya</option>
-          <option value="Uganda">Uganda</option>
-          <option value="Tanzania">Tanzania</option>
-        </select>
-      </div>
+         <select id="countryFilter">
+           <option value="all">All Countries</option>
+           <option value="Somalia">Somalia</option>
+           <option value="Kenya">Kenya</option>
+           <option value="Ethiopia">Ethiopia</option>
+         </select>
+       </div>
 
-      <!-- EDUCATION FILTER -->
-      <div class="filter-group">
-        <label>Filter by Education</label>
+       <!-- EDUCATION FILTER -->
+       <div class="filter-group">
+         <label>Filter by Education</label>
 
-        <select id="educationFilter">
-          <option value="all">All Levels</option>
-          <option value="Bachelor’s Degree">Bachelor’s Degree</option>
-          <option value="Master’s Degree">Master’s Degree</option>
-          <option value="Diploma">Diploma</option>
-        </select>
-      </div>
+         <select id="educationFilter">
+           <option value="all">All Levels</option>
+           <option value="Primary School">Primary School</option>
+           <option value="Secondary School">Secondary School</option>
+           <option value="Diploma">Diploma</option>
+           <option value="Degree">Degree</option>
+         </select>
+       </div>
 
     </div>
 
@@ -160,9 +161,9 @@ while ($row = $res->fetch_assoc()) {
 
   </div>
 
-  <!-- Include Side Bar Below -->
+   <!-- Include Side Bar Below -->
 
 </div>
 
-
+<script src="assets/js/table-filters.js"></script>
 <?php include("inc/footer.php"); ?>
