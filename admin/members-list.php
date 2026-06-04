@@ -9,6 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once '../config.php';
+require_once '../inc/constants.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../login.php");
@@ -61,15 +62,20 @@ if ($page < 1) $page = 1;
 $per_page = intval($_GET['per_page'] ?? 10);
 
 // Filtering
-$country_filter = isset($_GET['country']) && $_GET['country'] !== 'all' ? sanitize_input($_GET['country']) : '';
-$status_filter  = isset($_GET['status'])  && $_GET['status']  !== 'all' ? sanitize_input($_GET['status'])  : '';
-$search         = isset($_GET['search'])  ? sanitize_input($_GET['search']) : '';
+$country_filter   = isset($_GET['country']) && $_GET['country'] !== 'all' ? sanitize_input($_GET['country']) : '';
+$education_filter = isset($_GET['education']) && $_GET['education'] !== 'all' ? sanitize_input($_GET['education']) : '';
+$status_filter    = isset($_GET['status'])  && $_GET['status']  !== 'all' ? sanitize_input($_GET['status'])  : '';
+$search           = isset($_GET['search'])  ? sanitize_input($_GET['search']) : '';
 
 // Build WHERE clause
 $where_conditions = ["1=1"];
 
 if (!empty($country_filter)) {
     $where_conditions[] = "country = '" . $conn->real_escape_string($country_filter) . "'";
+}
+
+if (!empty($education_filter)) {
+    $where_conditions[] = "education = '" . $conn->real_escape_string($education_filter) . "'";
 }
 
 if (!empty($status_filter)) {
@@ -101,8 +107,12 @@ while ($row = $result->fetch_assoc()) {
     $members[] = $row;
 }
 
-// Hardcoded countries list (matching registration forms)
-$countries = ['Somalia', 'Kenya', 'Ethiopia'];
+// Get unique countries from database
+$countries_result = $conn->query("SELECT DISTINCT country FROM members ORDER BY country");
+$countries = [];
+while ($row = $countries_result->fetch_assoc()) {
+    $countries[] = $row['country'];
+}
 
 // Now safe to output HTML
 include 'header.php';
@@ -448,6 +458,18 @@ include 'header.php';
                         </div>
 
                         <div class="filter-group">
+                            <label>Filter by Education</label>
+                            <select name="education">
+                                <option value="all">All Levels</option>
+                                <?php foreach (EDUCATION_LEVELS as $level): ?>
+                                    <option value="<?php echo htmlspecialchars($level); ?>" <?php echo $education_filter === $level ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($level); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
                             <label>Filter by Status</label>
                             <select name="status">
                                 <option value="all">All Status</option>
@@ -544,9 +566,10 @@ include 'header.php';
 
                         <!-- PAGINATION -->
                         <?php if ($total_pages > 1):
-                            $qs = (!empty($search)         ? '&search='   . urlencode($search)         : '')
-                                . (!empty($country_filter) ? '&country='  . urlencode($country_filter) : '')
-                                . (!empty($status_filter)  ? '&status='   . urlencode($status_filter)  : '')
+                            $qs = (!empty($search)           ? '&search='    . urlencode($search)           : '')
+                                . (!empty($country_filter)   ? '&country='   . urlencode($country_filter)   : '')
+                                . (!empty($education_filter) ? '&education=' . urlencode($education_filter) : '')
+                                . (!empty($status_filter)    ? '&status='    . urlencode($status_filter)    : '')
                                 . ('&per_page=' . $per_page);
                         ?>
                             <div class="pagination-container">

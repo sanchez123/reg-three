@@ -1,6 +1,7 @@
 <?php include("inc/header.php") ?>
 <?php
 require_once 'config.php';
+require_once 'inc/constants.php';
 
 $candidates = [];
 $stmt = $conn->prepare("SELECT first_name, gender, place_of_birth, education, occupation, country, state, district FROM candidates WHERE status = 'approved' ORDER BY registration_date DESC");
@@ -8,6 +9,13 @@ $stmt->execute();
 $res = $stmt->get_result();
 while ($row = $res->fetch_assoc()) {
     $candidates[] = $row;
+}
+
+// Get unique countries from candidates
+$countries_result = $conn->query("SELECT DISTINCT country FROM candidates WHERE status = 'approved' ORDER BY country");
+$countries = [];
+while ($row = $countries_result->fetch_assoc()) {
+    $countries[] = $row['country'];
 }
 ?>
 <?php include("inc/menu.php") ?>
@@ -47,17 +55,19 @@ while ($row = $res->fetch_assoc()) {
 
     <div class="filters">
 
-      <!-- COUNTRY FILTER -->
-      <div class="filter-group">
-        <label>Filter by Country</label>
+       <!-- COUNTRY FILTER -->
+       <div class="filter-group">
+         <label>Filter by Country</label>
 
-        <select id="countryFilter">
-          <option value="all">All Countries</option>
-          <option value="Kenya">Kenya</option>
-          <option value="Somalia">Somalia</option>
-          <option value="Ethiopia">Ethiopia</option>
-        </select>
-      </div>
+         <select id="countryFilter">
+           <option value="all">All Countries</option>
+           <?php foreach ($countries as $country): ?>
+             <option value="<?php echo htmlspecialchars($country); ?>">
+               <?php echo htmlspecialchars($country); ?>
+             </option>
+           <?php endforeach; ?>
+         </select>
+       </div>
 
        <!-- EDUCATION FILTER -->
        <div class="filter-group">
@@ -65,10 +75,11 @@ while ($row = $res->fetch_assoc()) {
 
          <select id="educationFilter">
            <option value="all">All Levels</option>
-           <option value="Primary School">Primary School</option>
-           <option value="Secondary School">Secondary School</option>
-           <option value="Diploma">Diploma</option>
-           <option value="Degree">Degree</option>
+           <?php foreach (EDUCATION_LEVELS as $level): ?>
+             <option value="<?php echo htmlspecialchars($level); ?>">
+               <?php echo htmlspecialchars($level); ?>
+             </option>
+           <?php endforeach; ?>
          </select>
        </div>
 

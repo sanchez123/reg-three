@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'inc/constants.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -53,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($form_data['education'])) {
             $errors[] = 'Education Level is required';
+        } elseif (!in_array($form_data['education'], EDUCATION_LEVELS)) {
+            $errors[] = 'Invalid education level selected';
         }
         if (empty($form_data['occupation'])) {
             $errors[] = 'Occupation is required';
@@ -209,10 +212,11 @@ include("inc/menu.php");
             <label>Heerka Waxbarashada: <span>*</span></label>
             <select name="education">
               <option value="">----- DOORO HEERKA WAXBARASHADA -----</option>
-              <option value="Primary School" <?php echo ($form_data['education'] ?? '') === 'Primary School' ? 'selected' : ''; ?>>Primary School</option>
-              <option value="Secondary School" <?php echo ($form_data['education'] ?? '') === 'Secondary School' ? 'selected' : ''; ?>>Secondary School</option>
-              <option value="Diploma" <?php echo ($form_data['education'] ?? '') === 'Diploma' ? 'selected' : ''; ?>>Diploma</option>
-              <option value="Degree" <?php echo ($form_data['education'] ?? '') === 'Degree' ? 'selected' : ''; ?>>Degree</option>
+              <?php foreach (EDUCATION_LEVELS as $level): ?>
+                <option value="<?php echo htmlspecialchars($level); ?>" <?php echo ($form_data['education'] ?? '') === $level ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($level); ?>
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
 
@@ -225,9 +229,11 @@ include("inc/menu.php");
             <label>Waddanka: <span>*</span></label>
             <select name="country">
               <option value="">----- DOORO WADDANKA -----</option>
-              <option value="Somalia" <?php echo ($form_data['country'] ?? '') === 'Somalia' ? 'selected' : ''; ?>>Somalia</option>
-              <option value="Kenya" <?php echo ($form_data['country'] ?? '') === 'Kenya' ? 'selected' : ''; ?>>Kenya</option>
-              <option value="Ethiopia" <?php echo ($form_data['country'] ?? '') === 'Ethiopia' ? 'selected' : ''; ?>>Ethiopia</option>
+              <?php foreach (AFRICAN_COUNTRIES as $country): ?>
+                <option value="<?php echo htmlspecialchars($country); ?>" <?php echo ($form_data['country'] ?? '') === $country ? 'selected' : ''; ?>>
+                  <?php echo htmlspecialchars($country); ?>
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
 

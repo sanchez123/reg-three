@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once '../config.php';
+require_once '../inc/constants.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../login.php");
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($form_data['place_of_birth'])) $errors[] = 'Place of birth is required';
 
-    if (empty($form_data['education']) || !in_array($form_data['education'], ['Primary School', 'Secondary School', 'Diploma', 'Degree'])) {
+    if (empty($form_data['education']) || !in_array($form_data['education'], EDUCATION_LEVELS)) {
         $errors[] = 'Valid education level is required';
     }
 
@@ -304,10 +305,11 @@ include 'header.php';
                 <label>Education Level <span class="required">*</span></label>
                 <select name="education" required>
                     <option value="">Select Education Level</option>
-                    <option value="Primary School"   <?php echo $form_data['education'] === 'Primary School'   ? 'selected' : ''; ?>>Primary School</option>
-                    <option value="Secondary School" <?php echo $form_data['education'] === 'Secondary School' ? 'selected' : ''; ?>>Secondary School</option>
-                    <option value="Diploma"          <?php echo $form_data['education'] === 'Diploma'          ? 'selected' : ''; ?>>Diploma</option>
-                    <option value="Degree"           <?php echo $form_data['education'] === 'Degree'           ? 'selected' : ''; ?>>Degree</option>
+                    <?php foreach (EDUCATION_LEVELS as $level): ?>
+                        <option value="<?php echo htmlspecialchars($level); ?>" <?php echo $form_data['education'] === $level ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($level); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="form-group">
@@ -321,9 +323,11 @@ include 'header.php';
                 <label>Country <span class="required">*</span></label>
                 <select name="country" required>
                     <option value="">Select Country</option>
-                    <option value="Somalia"  <?php echo $form_data['country'] === 'Somalia'  ? 'selected' : ''; ?>>Somalia</option>
-                    <option value="Kenya"    <?php echo $form_data['country'] === 'Kenya'    ? 'selected' : ''; ?>>Kenya</option>
-                    <option value="Ethiopia" <?php echo $form_data['country'] === 'Ethiopia' ? 'selected' : ''; ?>>Ethiopia</option>
+                    <?php foreach (AFRICAN_COUNTRIES as $country): ?>
+                        <option value="<?php echo htmlspecialchars($country); ?>" <?php echo $form_data['country'] === $country ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($country); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="form-group">

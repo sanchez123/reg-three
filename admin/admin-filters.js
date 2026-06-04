@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.querySelector('input[name="search"]');
     const countrySelect = document.querySelector('select[name="country"]');
+    const educationSelect = document.querySelector('select[name="education"]');
     const statusSelect = document.querySelector('select[name="status"]');
     const form = document.querySelector('.filters-container');
 
@@ -22,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (countrySelect) {
         countrySelect.addEventListener('change', applyFilters);
     }
+    if (educationSelect) {
+        educationSelect.addEventListener('change', applyFilters);
+    }
 
     if (statusSelect) {
         statusSelect.addEventListener('change', applyFilters);
@@ -35,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Clear all filters
             if (searchInput) searchInput.value = '';
             if (countrySelect) countrySelect.value = 'all';
+            if (educationSelect) educationSelect.value = 'all';
             if (statusSelect) statusSelect.value = 'all';
 
             // Redirect to clean page

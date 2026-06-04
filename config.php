@@ -9,7 +9,7 @@ ini_set('error_log', __DIR__ . '/error.log');
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'tiir');
+define('DB_NAME', 'members');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
