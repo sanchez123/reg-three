@@ -61,6 +61,16 @@
 
 <!-- SweetAlert2 + shared showSystemMessage for front-end pages (matches admin) -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Custom styling for SweetAlert2 HTML content: left-align and remove default list markers -->
+<style>
+  /* Ensure any HTML passed into Swal is left-aligned instead of centered */
+  .swal2-html-container { text-align: left !important; }
+  /* Remove default list bullets inside the alert and provide a custom chevron marker */
+  .swal2-html-container ul { list-style: none !important; padding-left: 1.1em !important; margin-left: 0 !important; }
+  .swal2-html-container li { position: relative; margin: 0.35em 0; padding-left: 1.1em; }
+  .swal2-html-container li:before { content: '\203A'; /* single chevron */
+    position: absolute; left: 0; color: #ff8a00; font-weight: 700; }
+</style>
 <?php if (session_status() !== PHP_SESSION_ACTIVE) session_start(); ?>
 <script>
   (function(){
