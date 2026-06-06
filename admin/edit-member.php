@@ -138,6 +138,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Duplicate government id check (excluding current member)
+    if ($form_data['government_id'] !== $member['government_id']) {
+        $gov_check = $conn->prepare("SELECT id FROM members WHERE government_id = ? AND id != ?");
+        if ($gov_check) {
+            $gov_check->bind_param("si", $form_data['government_id'], $member_id);
+            $gov_check->execute();
+            if ($gov_check->get_result()->num_rows > 0) {
+                $errors[] = 'Government ID / Passport already registered to another member';
+            }
+            $gov_check->close();
+        }
+    }
+
     // Handle file upload
     $photo_path = $member['photo_path'];
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
@@ -444,8 +457,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" name="place_of_birth" required value="<?php echo htmlspecialchars($form_data['place_of_birth']); ?>">
                             </div>
                             <div class="form-group">
-                                <label>Government ID / Passport</label>
-                                <input type="text" name="government_id" value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
+                                <label>Government ID / Passport <span class="required">*</span></label>
+                                <input type="text" name="government_id" required value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
                             </div>
                         </div>
 

@@ -232,8 +232,8 @@ include 'header.php';
                 <input type="text" name="place_of_birth" required value="<?php echo htmlspecialchars($form_data['place_of_birth'] ?? ''); ?>">
             </div>
             <div class="form-group">
-                <label>Government ID / Passport</label>
-                <input type="text" name="government_id" value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
+                <label>Government ID / Passport <span class="required">*</span></label>
+                <input type="text" name="government_id" required value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
             </div>
         </div>
 

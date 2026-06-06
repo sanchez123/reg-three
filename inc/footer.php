@@ -53,79 +53,94 @@
   }
 
   function displayTable(){
-    const filteredRows = getFilteredRows();
-    const limit = parseInt(entriesPerPage.value || 10);
-    const totalPages = Math.max(1, Math.ceil(filteredRows.length / limit));
-
-    if(currentPage > totalPages) currentPage = 1;
-
-    rows.forEach(row => row.style.display = 'none');
-
-    const start = (currentPage - 1) * limit;
-    const end = start + limit;
-    filteredRows.slice(start, end).forEach(row => row.style.display = '');
-
-    if (pageInfo) pageInfo.innerText = `Page ${currentPage} of ${totalPages || 1}`;
-    if (prevBtn) prevBtn.disabled = currentPage === 1;
-    if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+    // Table rendering/pagination handled on pages that need it.
+    // Original implementation removed to avoid duplicate/embedded datepicker logic.
+    return;
   }
-
-  if (countryFilter) countryFilter.addEventListener('change', () => { currentPage = 1; displayTable(); });
-  if (educationFilter) educationFilter.addEventListener('change', () => { currentPage = 1; displayTable(); });
-  if (entriesPerPage) entriesPerPage.addEventListener('change', () => { currentPage = 1; displayTable(); });
-  if (prevBtn) prevBtn.addEventListener('click', () => { currentPage--; displayTable(); });
-  if (nextBtn) nextBtn.addEventListener('click', () => { currentPage++; displayTable(); });
-
-  displayTable();
-})();
 </script>
 
-
-<!-- SweetAlert2 -->
+<!-- SweetAlert2 + shared showSystemMessage for front-end pages (matches admin) -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php if (session_status() !== PHP_SESSION_ACTIVE) session_start(); ?>
 <script>
-(function(){
-  // Expose a global helper so other scripts and AJAX responses can show system messages
-  function showSystemMessage(type, message, options = {}){
-    // Log for debugging (helps when page reloads quickly)
-    if(type === 'success') console.log('System message (success):', message);
-    else console.error('System message (error):', message);
+  (function(){
+    function showSystemMessage(type, message, options = {}){
+      const cfg = {
+        icon: type === 'success' ? 'success' : 'error',
+        title: type === 'success' ? 'Success' : 'Error',
+        html: message,
+        showCloseButton: true,
+        showConfirmButton: !!(options.confirm !== false),
+        timer: type === 'success' ? (options.timer || 3000) : undefined,
+        timerProgressBar: type === 'success'
+      };
+      Swal.fire(cfg);
+    }
+    window.showSystemMessage = showSystemMessage;
 
-    const cfg = {
-      icon: type === 'success' ? 'success' : 'error',
-      title: type === 'success' ? 'Success' : 'Error',
-      html: message,
-      showCloseButton: true,
-      showConfirmButton: !!(options.confirm !== false),
-      timer: type === 'success' ? (options.timer || 3000) : undefined,
-      timerProgressBar: type === 'success'
-    };
+    const flashSuccess = <?php echo isset($_SESSION['flash_success']) ? json_encode($_SESSION['flash_success']) : 'null'; ?>;
+    const flashError = <?php echo isset($_SESSION['flash_error']) ? json_encode($_SESSION['flash_error']) : 'null'; ?>;
 
-    Swal.fire(cfg);
+    if (flashSuccess){
+      showSystemMessage('success', flashSuccess, {timer:3000, confirm:false});
+      <?php unset($_SESSION['flash_success']); ?>
+    }
+    if (flashError){
+      showSystemMessage('error', flashError, {confirm:true});
+      <?php unset($_SESSION['flash_error']); ?>
+    }
+  })();
+</script>
+
+<!-- flatpickr for front-end date inputs (match admin behavior) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+;(function(){
+  if (typeof flatpickr === 'undefined') return;
+  function initFlatpickrOnDateInputs(){
+    var inputs = Array.from(document.querySelectorAll('input[type="date"]'));
+    if (!inputs.length) return;
+    var currentYear = new Date().getFullYear();
+    inputs.forEach(function(inp){
+      if (inp.dataset.fpInitialized) return;
+      inp.dataset.fpInitialized = '1';
+      var name = inp.getAttribute('name');
+      var val = inp.value;
+      try { inp.setAttribute('type','text'); } catch(e) {}
+      var hidden = document.createElement('input'); hidden.type='hidden'; if (name) hidden.name = name; inp.removeAttribute('name'); inp.parentNode.insertBefore(hidden, inp.nextSibling);
+      var opts = {
+        altInput: true,
+        altFormat: 'd/m/Y',
+        dateFormat: 'Y-m-d',
+        clickOpens: true,
+        allowInput: false,
+        onChange: function(selectedDates, dateStr, instance){
+          if (selectedDates && selectedDates.length){
+            var d = selectedDates[0];
+            hidden.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+          } else {
+            hidden.value = '';
+          }
+        },
+        onReady: function(selectedDates, dateStr, instance){
+          var vis = instance.altInput || inp;
+          vis.addEventListener('focus', function(){ instance.open(); });
+          vis.addEventListener('click', function(){ instance.open(); });
+        }
+      };
+      var nm=(name||'').toLowerCase(); if (nm.indexOf('dob')!==-1||nm.indexOf('date_of_birth')!==-1) opts.maxDate=new Date();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) opts.defaultDate=val; else if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)){ var p=val.split('/'); opts.defaultDate = p[2]+'-'+p[1]+'-'+p[0]; }
+      flatpickr(inp, opts);
+    });
   }
 
-  // Make callable from anywhere
-  window.showSystemMessage = showSystemMessage;
-
-  // Read flash messages from PHP session (safe JSON encoding)
-  const flashSuccess = <?php echo isset($_SESSION['flash_success']) ? json_encode($_SESSION['flash_success']) : 'null'; ?>;
-  const flashError = <?php echo isset($_SESSION['flash_error']) ? json_encode($_SESSION['flash_error']) : 'null'; ?>;
-
-  if (flashSuccess){
-    showSystemMessage('success', flashSuccess, {timer:3000, confirm:false});
-    <?php unset($_SESSION['flash_success']); ?>
-  }
-
-  if (flashError){
-    showSystemMessage('error', flashError, {confirm:true});
-    <?php unset($_SESSION['flash_error']); ?>
-  }
-
+  document.addEventListener('DOMContentLoaded', initFlatpickrOnDateInputs);
+  window.addEventListener('load', initFlatpickrOnDateInputs);
+  if (window.MutationObserver){ var mo=new MutationObserver(function(){ initFlatpickrOnDateInputs(); }); mo.observe(document.body,{childList:true,subtree:true}); setTimeout(function(){ mo.disconnect(); }, 5000);} else { setTimeout(initFlatpickrOnDateInputs,500); setTimeout(initFlatpickrOnDateInputs,1500); }
 })();
 </script>
 
-<!-- Admin UI JS -->
 <script src="assets/js/admin-ui.js"></script>
 </body>
 </html>

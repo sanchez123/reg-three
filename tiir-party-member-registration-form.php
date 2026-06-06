@@ -10,6 +10,10 @@ $success = '';
 $form_data = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Detect AJAX submissions
+    $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
     // Collect form data
     $form_data = [
         'first_name' => sanitize_input($_POST['first-name'] ?? ''),
@@ -27,6 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'phone' => sanitize_input($_POST['phone'] ?? ''),
         'security_code' => sanitize_input($_POST['security_code'] ?? '')
     ];
+
+    // Normalize education value in case it was HTML-encoded by the browser or sanitizers
+    if (!empty($form_data['education'])) {
+        $form_data['education'] = html_entity_decode($form_data['education'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
 
     // Validate each field individually
         if (empty($form_data['first_name'])) {
@@ -51,6 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($form_data['pob'])) {
             $errors[] = 'Place of Birth is required';
+        }
+        if (empty($form_data['govt'])) {
+            $errors[] = 'Aqoonsi / Passport No is required';
         }
         if (empty($form_data['education'])) {
             $errors[] = 'Education Level is required';
@@ -79,23 +91,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!validate_phone($form_data['phone'])) {
             $errors[] = 'Invalid phone number format';
         }
-        if (!isset($_FILES['photo']) || $_FILES['photo']['error'] === UPLOAD_ERR_NO_FILE) {
+        // Duplicate email/phone/government id checks
+        if (!empty($form_data['email'])) {
+            $email_check = $conn->prepare("SELECT id FROM members WHERE email = ?");
+            if ($email_check) {
+                $email_check->bind_param("s", $form_data['email']);
+                $email_check->execute();
+                if ($email_check->get_result()->num_rows > 0) $errors[] = 'Email already registered';
+                $email_check->close();
+            }
+        }
+
+        if (!empty($form_data['phone'])) {
+            $phone_check = $conn->prepare("SELECT id FROM members WHERE phone = ?");
+            if ($phone_check) {
+                $phone_check->bind_param("s", $form_data['phone']);
+                $phone_check->execute();
+                if ($phone_check->get_result()->num_rows > 0) $errors[] = 'Phone number already registered';
+                $phone_check->close();
+            }
+        }
+
+        if (!empty($form_data['govt'])) {
+            $gov_check = $conn->prepare("SELECT id FROM members WHERE government_id = ?");
+            if ($gov_check) {
+                $gov_check->bind_param("s", $form_data['govt']);
+                $gov_check->execute();
+                if ($gov_check->get_result()->num_rows > 0) $errors[] = 'Government ID / Passport already registered';
+                $gov_check->close();
+            }
+        }
+        // Photo is required for member registration
+        if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
             $errors[] = 'Photo is required';
         }
+
         if (empty($form_data['security_code'])) {
             $errors[] = 'Security code is required';
         } elseif (isset($_SESSION['security_code']) && (int)$_SESSION['security_code'] !== (int)$form_data['security_code']) {
             $errors[] = 'Security code is incorrect';
+            // Rotate the security code on incorrect attempts to prevent replay (same as admin)
+            $_SESSION['security_code'] = rand(10000, 99999);
         }
 
     // If no errors, process the form
     if (empty($errors)) {
-        // Handle photo upload
+        // Handle photo upload (we already required the file above)
         $photo_path = null;
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
             $photo_path = upload_file($_FILES['photo'], 'uploads/members/');
             if (!$photo_path) {
                 $errors[] = 'Photo upload failed';
+            }
+        } else {
+            if (empty($photo_path)) {
+                $errors[] = 'Photo is required';
             }
         }
 
@@ -120,11 +170,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $form_data['security_code']
                 );
                 if ($stmt->execute()) {
-                    $success = 'Registration successful! Your information has been submitted.';
+                    $success = 'Member Registration Successful! Your information has been submitted.';
+                    if (!$is_ajax) {
+                        $_SESSION['flash_success'] = $success;
+                    }
                     $form_data = [];
                     $_SESSION['security_code'] = rand(10000, 99999);
+                    if ($is_ajax) {
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'success' => true,
+                            'message' => $success,
+                            'security_code' => $_SESSION['security_code']
+                        ]);
+                        exit();
+                    }
                 } else {
                     $errors[] = 'Database error: ' . $conn->error;
+                    if ($is_ajax) {
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'success' => false,
+                            'errors' => ['Database error: ' . $conn->error]
+                        ]);
+                        exit();
+                    }
                 }
                 $stmt->close();
             } else {
@@ -137,6 +207,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Generate security code if needed
 if (!isset($_SESSION['security_code'])) {
     $_SESSION['security_code'] = rand(10000, 99999);
+}
+
+// If this was an AJAX submission and there are validation errors, return them as JSON
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($is_ajax) && $is_ajax && !empty($errors)) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'errors' => array_values($errors),
+        // include the current security code so clients can update the displayed code if it was rotated
+        'security_code' => isset($_SESSION['security_code']) ? $_SESSION['security_code'] : null,
+        // include submitted form values so the client can repopulate fields after validation errors
+        'form_data' => [
+            'first_name' => $form_data['first_name'] ?? '',
+            'mothers_name' => $form_data['mothers_name'] ?? '',
+            'gender' => $form_data['gender'] ?? '',
+            'dob' => $form_data['dob'] ?? '',
+            'pob' => $form_data['pob'] ?? '',
+            'govt' => $form_data['govt'] ?? '',
+            'education' => $form_data['education'] ?? '',
+            'occupation' => $form_data['occupation'] ?? '',
+            'country' => $form_data['country'] ?? '',
+            'state' => $form_data['state'] ?? '',
+            'district' => $form_data['district'] ?? '',
+            'email' => $form_data['email'] ?? '',
+            'phone' => $form_data['phone'] ?? ''
+        ]
+    ]);
+    exit();
+}
+
+// For non-AJAX submissions with validation errors, set a session flash so the front-end footer shows a popup
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (empty($is_ajax) || !$is_ajax) && !empty($errors)) {
+    $html = '<strong>Please fix the following errors:</strong><ul>';
+    foreach ($errors as $e) {
+        $html .= '<li>' . htmlspecialchars($e) . '</li>';
+    }
+    $html .= '</ul>';
+    $_SESSION['flash_error'] = $html;
 }
 ?>
 <?php
@@ -154,22 +262,10 @@ include("inc/menu.php");
 
       <div class="form-container">
 
-        <?php if (!empty($success)): ?>
-            <div style="background: #dcfce7; color: #166534; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
-                <i class="fas fa-check-circle" style="margin-right: 10px;"></i><?php echo $success; ?>
-            </div>
-        <?php endif; ?>
+        <!-- Success messages are shown via the shared admin SweetAlert2 popup (inc/footer.php)
+             to ensure consistent animation and behavior. -->
 
-        <?php if (!empty($errors)): ?>
-            <div style="background: #fee2e2; color: #991b1b; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
-                <strong>Please fix the following errors:</strong>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <?php foreach($errors as $error): ?>
-                        <li><?php echo htmlspecialchars($error); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-        <?php endif; ?>
+        <!-- Top-of-page error summary removed. Validation errors are shown in a popup via SweetAlert2. -->
 
         <form class="classic-form" method="POST" enctype="multipart/form-data" id="member-form">
 
@@ -203,8 +299,8 @@ include("inc/menu.php");
           </div>
 
           <div class="form-row">
-            <label>Aqoonsi / Passport No:</label>
-            <input type="text" name="govtid" value="<?php echo htmlspecialchars($form_data['govt'] ?? ''); ?>">
+            <label>Aqoonsi / Passport No: <span>*</span></label>
+            <input type="text" name="govtid" required value="<?php echo htmlspecialchars($form_data['govt'] ?? ''); ?>">
           </div>
 
           <div class="form-row">
@@ -258,7 +354,7 @@ include("inc/menu.php");
 
           <div class="form-row">
             <label>Sawir: <span>*</span></label>
-            <input type="file" name="photo" accept="image/*">
+            <input type="file" name="photo" accept="image/*" required>
           </div>
 
           <div class="form-row security-row">
@@ -296,5 +392,134 @@ include("inc/menu.php");
   <?php include("inc/sidebar.php"); ?>
 
 </div>
+
+<script>
+// AJAX submit for member registration to show admin-style popup without full page reload
+(function(){
+    const form = document.getElementById('member-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e){
+        e.preventDefault();
+        // Respect HTML5 validation (required, type, etc.) before performing AJAX submit
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        const fd = new FormData(form);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: fd,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(function(response){
+            const ct = (response.headers.get('content-type') || '').toLowerCase();
+            if (ct.indexOf('application/json') !== -1) {
+                return response.json().then(function(data){
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (data.success) {
+                        if (window.showSystemMessage) {
+                            window.showSystemMessage('success', data.message, {timer:3000, confirm:false});
+                        } else if (window.Swal) {
+                            Swal.fire({icon:'success', title:'Success', html: data.message, timer:3000, showConfirmButton:false});
+                        }
+                        form.reset();
+                        if (data.security_code) {
+                            const el = document.querySelector('.security-number');
+                            if (el) el.textContent = data.security_code;
+                        }
+                        const err = document.getElementById('form-errors');
+                        if (err) err.style.display = 'none';
+                    } else {
+                        // Show validation errors in a popup (consistent with admin UI)
+                        var listHtml = '<strong>Please fix the following errors:</strong><ul style="text-align:left;margin-left:18px;margin-top:10px;">' + (data.errors || []).map(function(it){ return '<li>'+it+'</li>'; }).join('') + '</ul>';
+                        if (data.security_code) {
+                            var secEl = document.querySelector('.security-number');
+                            if (secEl) secEl.textContent = data.security_code;
+                        }
+                        if (window.showSystemMessage) {
+                            window.showSystemMessage('error', listHtml, {confirm:true});
+                        } else if (window.Swal) {
+                            Swal.fire({icon:'error', title:'Validation failed', html: listHtml, showConfirmButton:true});
+                        }
+
+                        // Repopulate form fields from server-returned form_data (helps preserve fields like DOB)
+                        if (data.form_data) {
+                            try {
+                                Object.keys(data.form_data).forEach(function(k){
+                                    var v = data.form_data[k] || '';
+                                    var el = form.querySelector('[name="'+k+'"]');
+                                    if (el) {
+                                        // visible or hidden input with the name (most fields)
+                                        el.value = v;
+                                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                                        el.dispatchEvent(new Event('change', {bubbles:true}));
+                                        return;
+                                    }
+
+                                    var hidden = form.querySelector('input[type="hidden"][name="'+k+'"]');
+                                    if (hidden) {
+                                        hidden.value = v;
+                                        hidden.dispatchEvent(new Event('input', {bubbles:true}));
+                                        hidden.dispatchEvent(new Event('change', {bubbles:true}));
+
+                                        var vis = hidden.previousElementSibling;
+                                        if (vis) {
+                                            if (k === 'dob' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                                                var p = v.split('-');
+                                                vis.value = p[2] + '/' + p[1] + '/' + p[0];
+                                            } else {
+                                                vis.value = v;
+                                            }
+                                            vis.dispatchEvent(new Event('input', {bubbles:true}));
+                                            vis.dispatchEvent(new Event('change', {bubbles:true}));
+
+                                            var instance = vis._flatpickr || hidden._flatpickr || vis._fp || null;
+                                            if (!instance) {
+                                                var candidates = form.querySelectorAll('input[data-fp-initialized="1"]');
+                                                for (var i=0;i<candidates.length;i++) {
+                                                    var c = candidates[i];
+                                                    if (c.nextElementSibling === hidden || c === vis || c.previousElementSibling === vis) { instance = c._flatpickr || c._fp || null; break; }
+                                                }
+                                            }
+                                            if (instance && k === 'dob' && v) {
+                                                try { instance.setDate(v, true); } catch(e) { }
+                                            }
+                                        }
+                                    }
+                                });
+                            } catch (e) {
+                                console.error('Error repopulating form fields:', e);
+                            }
+                        }
+                    }
+                    }
+                });
+            }
+            return response.text().then(function(text){
+                if (submitBtn) submitBtn.disabled = false;
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    if (window.showSystemMessage) {
+                        window.showSystemMessage('error', text || 'Submission failed. Please try again.', {confirm:true});
+                    }
+                }
+            });
+        }).catch(function(err){
+            if (submitBtn) submitBtn.disabled = false;
+            if (window.showSystemMessage) {
+                window.showSystemMessage('error', 'Submission failed. Please try again.', {confirm:true});
+            }
+            console.error('AJAX submit error:', err);
+        });
+    });
+})();
+</script>
 
 <?php include("inc/footer.php"); ?>

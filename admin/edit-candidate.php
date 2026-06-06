@@ -129,6 +129,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Duplicate government id check (excluding current candidate)
+    if ($form_data['government_id'] !== $candidate['government_id']) {
+        $gov_check = $conn->prepare("SELECT id FROM candidates WHERE government_id = ? AND id != ?");
+        if ($gov_check) {
+            $gov_check->bind_param("si", $form_data['government_id'], $candidate_id);
+            $gov_check->execute();
+            if ($gov_check->get_result()->num_rows > 0) {
+                $errors[] = 'Government ID / Passport already registered to another candidate';
+            }
+            $gov_check->close();
+        }
+    }
+
     if (!empty($form_data['status']) && !in_array($form_data['status'], ['pending', 'approved', 'rejected'])) {
         $errors[] = 'Invalid status';
     }
@@ -295,8 +308,8 @@ include 'header.php';
                 <input type="text" name="place_of_birth" required value="<?php echo htmlspecialchars($form_data['place_of_birth']); ?>">
             </div>
             <div class="form-group">
-                <label>Government ID / Passport</label>
-                <input type="text" name="government_id" value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
+                <label>Government ID / Passport <span class="required">*</span></label>
+                <input type="text" name="government_id" required value="<?php echo htmlspecialchars($form_data['government_id'] ?? ''); ?>">
             </div>
         </div>
 
